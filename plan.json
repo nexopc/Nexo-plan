@@ -1,5 +1,11 @@
 {
-  "version": "2026-10-26-prueba",
-  "mensaje": "✅ ¡Prueba exitosa, Cristóbal! Tu app está conectada a GitHub y recibe las actualizaciones. Cada domingo te llegará aquí el mensaje de la semana.",
-  "sesiones": {}
+  "version": "2026-10-26-app-1.1",
+  "mensaje": "¡NEXO PLAN 1.1 ya está aquí! Tareas con avisos 3 días, 1 día y 1 hora antes; todas tus clases en Hoy; bloques ancla y modo fuera de casa. Empieza escogiendo tus 3 bloques ancla.",
+  "sesiones": {},
+  "app": {
+    "version": 2,
+    "nombre": "1.1",
+    "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
+    "notas": "Tareas, clases, bloques ancla y modo fuera de casa."
+  }
 }

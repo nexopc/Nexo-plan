@@ -44,3 +44,9 @@ Las sesiones de 30 minutos son repasos o tareas cortas. Las de 2 horas son la pr
 - Tareas concretas y medibles, que quepan en el tiempo del bloque.
 - Datos reales (precios, herramientas, leyes colombianas). Si un dato puede haber cambiado, dilo.
 - El ejercicio NO va aquí: la app lo sube de nivel sola (`fuente/ejercicio.js`).
+
+## Campo "app" (NO borrarlo)
+`plan.json` tiene un campo `app` con la última versión de la app (`version` = número entero, `apk` = enlace de descarga).
+Cuando la app instalada ve un `version` mayor que el suyo, muestra el botón "Descargar". Las actualizaciones semanales
+deben conservar este campo tal cual. Solo cambia cuando se publica un APK nuevo en `apk/NEXO-PLAN.apk`
+(firmado con la misma llave de NEXO PLAN y con versionCode mayor).
