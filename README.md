@@ -5,7 +5,7 @@ Este repositorio alimenta la app **NEXO PLAN** de NEXO PC ("Excelencia digital, 
 La app descarga este archivo y suma los temas de las semanas nuevas:
 
 ```
-https://raw.githubusercontent.com/nexopc/nexo-plan/main/plan.json
+https://raw.githubusercontent.com/nexopc/Nexo-plan/main/plan.json
 ```
 
 - `plan.json`: el plan que lee la app (temas por semana + mensaje de la semana).
