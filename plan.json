@@ -1,11 +1,11 @@
 {
-  "version": "2026-10-29-app-1.3",
-  "mensaje": "NEXO PLAN 1.3 está lista: toca el botón verde “Descargar” e instálala encima. Trae el asistente Harvey + Mike, la Agenda con huecos automáticos, el mapa de Quibdó con rutas a pie y en mototaxi, y tu nuevo proyecto Creador de contenido.",
+  "version": "2026-10-29-app-1.4",
+  "mensaje": "NEXO PLAN 1.4 está lista: toca el botón verde “Descargar” e instálala encima. Ahora marcas cada bloque como Hecho, A medias o No pude; las metas de días se llenan y se chulean solas; Harvey y Mike conocen tu perfil y tienen 500 frases.",
   "sesiones": {},
   "app": {
-    "version": 4,
-    "nombre": "1.3",
+    "version": 5,
+    "nombre": "1.4",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
-    "notas": "Asistente Harvey + Mike, Agenda, mapa de Quibdó con rutas y proyecto Creador de contenido."
+    "notas": "Marcar bloques con 3 opciones, metas por días automáticas y con casillas, perfil en el asistente y 500 frases de Harvey y Mike."
   }
 }
