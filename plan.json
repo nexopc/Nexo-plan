@@ -1,11 +1,11 @@
 {
-  "version": "2026-10-28-app-1.2",
-  "mensaje": "NEXO PLAN 1.2 está lista: toca el botón verde \"Descargar\" e instálala encima. Trae 🧭 Mi ruta (en Metas) con tus gráficas de plan vs real, y las tareas de viaje con instrucciones paso a paso.",
+  "version": "2026-10-29-app-1.3",
+  "mensaje": "NEXO PLAN 1.3 está lista: toca el botón verde “Descargar” e instálala encima. Trae el asistente Harvey + Mike, la Agenda con huecos automáticos, el mapa de Quibdó con rutas a pie y en mototaxi, y tu nuevo proyecto Creador de contenido.",
   "sesiones": {},
   "app": {
-    "version": 3,
-    "nombre": "1.2",
+    "version": 4,
+    "nombre": "1.3",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
-    "notas": "Mi ruta con gráficas de plan vs real, e instrucciones en las tareas de viaje."
+    "notas": "Asistente Harvey + Mike, Agenda, mapa de Quibdó con rutas y proyecto Creador de contenido."
   }
 }
