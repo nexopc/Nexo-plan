@@ -8,7 +8,7 @@ Español de Colombia, tono directo y motivador, con datos reales y críticas con
 
 ## Cambios recientes
 - Renunció a la tienda de computadores (nov 2026): sus bloques de trabajo pasaron a Libre. No escribas tareas “en tu turno” ni de la tienda.
-- Desde la app 1.5 puede editar sus bloques y poner la fecha en que termina el colegio; las sesiones siguen el orden de bloques de abajo.
+- La app volvió a la 1.4 (versionCode 7) a pedido de Cristóbal: no tiene horario editable.
 
 ## Calendario
 - Semana 1 = lunes 26 de octubre de 2026. Semana N empieza el lunes `2026-10-26 + 7·(N-1)` días.

@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-09-app-1.5",
-  "mensaje": "NEXO PLAN 1.5 está lista: toca “Descargar” e instálala encima. Ya quité la tienda de tu horario: te quedaron libres mar y jue 3:30–6:30 pm y sáb 8–12. En Hoy toca “✎ Editar mi día” para ponerles algo, y usa la nueva lista 📋 Tareas para lo que tienes que hacer.",
+  "version": "2026-11-09-app-1.4-vuelta",
+  "mensaje": "Volvimos a NEXO PLAN 1.4. Si alcanzaste a instalar la 1.5, toca “Descargar” e instálala encima: tu progreso no se pierde. Si sigues en la 1.4, no tienes que hacer nada.",
   "sesiones": {},
   "app": {
-    "version": 6,
-    "nombre": "1.5",
+    "version": 7,
+    "nombre": "1.4",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
-    "notas": "Edita tus bloques (solo hoy o siempre), horario sin la tienda, fecha de fin del colegio y una lista de Tareas aparte."
+    "notas": "Vuelve a la versión 1.4 (sin los cambios de horario de la 1.5). Tu progreso no se pierde."
   }
 }
