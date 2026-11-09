@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-08-sem3",
-  "mensaje": "Semana 3: tu primer CSS, entrevistas a 2 tiendas de Quibdó y detección de silencios en Filmora. Las entrevistas son lo más importante de la semana: agéndalas desde el lunes con el asistente. Sigue marcando tus bloques (✓, ½ o ✕) y el domingo pregúntale a Harvey y Mike “¿por qué voy mal?” antes de tu revisión semanal.",
+  "version": "2026-11-09-app-1.5",
+  "mensaje": "NEXO PLAN 1.5 está lista: toca “Descargar” e instálala encima. Ya quité la tienda de tu horario: te quedaron libres mar y jue 3:30–6:30 pm y sáb 8–12. En Hoy toca “✎ Editar mi día” para ponerles algo, y usa la nueva lista 📋 Tareas para lo que tienes que hacer.",
   "sesiones": {},
   "app": {
-    "version": 5,
-    "nombre": "1.4",
+    "version": 6,
+    "nombre": "1.5",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
-    "notas": "Marcar bloques con 3 opciones, metas por días automáticas y con casillas, perfil en el asistente y 500 frases de Harvey y Mike."
+    "notas": "Edita tus bloques (solo hoy o siempre), horario sin la tienda, fecha de fin del colegio y una lista de Tareas aparte."
   }
 }

@@ -6,6 +6,10 @@ Proyectos: **NEXO PC** (tienda de hardware y gaming, meta 4 años), **App Web** 
 **Edición de video** con Filmora 16 (6 meses), **Agencia de marketing** (12 meses) y **Hábitos**.
 Español de Colombia, tono directo y motivador, con datos reales y críticas constructivas.
 
+## Cambios recientes
+- Renunció a la tienda de computadores (nov 2026): sus bloques de trabajo pasaron a Libre. No escribas tareas “en tu turno” ni de la tienda.
+- Desde la app 1.5 puede editar sus bloques y poner la fecha en que termina el colegio; las sesiones siguen el orden de bloques de abajo.
+
 ## Calendario
 - Semana 1 = lunes 26 de octubre de 2026. Semana N empieza el lunes `2026-10-26 + 7·(N-1)` días.
 - Las semanas 1–12 ya vienen dentro de la app (`fuente/sesiones.js`). Solo se publican semanas nuevas (13 en adelante),
