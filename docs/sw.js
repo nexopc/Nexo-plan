@@ -1,5 +1,5 @@
 /* NEXO PLAN — service worker: guarda la app para que abra sin internet y se actualice sola */
-const CACHE = 'nexoplan-1.6-65588db3';
+const CACHE = 'nexoplan-1.7-5836485b';
 const FILES = [
   './css/app.css',
   './icons/apple-touch-icon.png',
@@ -12,6 +12,7 @@ const FILES = [
   './js/asistente.js',
   './js/boot.js',
   './js/contadores.js',
+  './js/desktop.js',
   './js/ejercicio.js',
   './js/firebase-config.js',
   './js/horario.js',

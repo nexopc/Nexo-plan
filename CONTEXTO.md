@@ -11,6 +11,8 @@ Español de Colombia, tono directo y motivador, con datos reales y críticas con
 - App 1.6 (versionCode 8): modo clases/vacaciones, ciclo de 2 semanas A/B en vacaciones, fila de tareas por proyecto (lo no hecho se arrastra), versión web en docs/ (GitHub Pages) y sincronización cifrada con Código NEXO (Firebase nexo-plan).
 - Si cambias archivos de la app web, copia app/assets/www a docs/ y regenera docs/sw.js.
 
+- App 1.7 (versionCode 9): en vacaciones usa un ciclo de 4 semanas (1 Enfoque App Web, 2 Cámara y edición, 3 Negocio, 4 Días temáticos), cada día 12 h de trabajo · 4 de descanso · 8 de sueño. La semana 5 del plan (23 nov 2026) es la Semana 1 del ciclo.
+
 ## Calendario
 - Semana 1 = lunes 26 de octubre de 2026. Semana N empieza el lunes `2026-10-26 + 7·(N-1)` días.
 - Las semanas 1–12 ya vienen dentro de la app (`fuente/sesiones.js`). Solo se publican semanas nuevas (13 en adelante),

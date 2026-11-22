@@ -1,7 +1,7 @@
 /* NEXO PLAN — lógica de la app */
 (function () {
   'use strict';
-  const APP_VERSION = 8, APP_NAME = '1.6';
+  const APP_VERSION = 9, APP_NAME = '1.7';
   const N = window.NexoNative || null; // puente con Android (no existe en el navegador)
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -84,9 +84,9 @@
   // clases: el horario de siempre sin la tienda (renunció en nov 2026)
   const BASE = {
     clases: () => MODELO.map((b) => (b.cat === 'trabajo' ? { d: b.d, s: b.s, e: b.e, cat: 'libre', title: 'Libre', was: b.title } : plain(b))),
-    vacA: () => HORARIO_VAC.A.map(plain), vacB: () => HORARIO_VAC.B.map(plain)
+    vac1: () => HORARIO_VAC[1].map(plain), vac2: () => HORARIO_VAC[2].map(plain), vac3: () => HORARIO_VAC[3].map(plain), vac4: () => HORARIO_VAC[4].map(plain)
   };
-  const KEY_N = { clases: 'Clases', vacA: 'Vacaciones · Semana A', vacB: 'Vacaciones · Semana B' };
+  const KEY_N = { clases: 'Clases', vac1: 'Vacaciones · ' + HORARIO_VAC[1].n, vac2: 'Vacaciones · ' + HORARIO_VAC[2].n, vac3: 'Vacaciones · ' + HORARIO_VAC[3].n, vac4: 'Vacaciones · ' + HORARIO_VAC[4].n };
   function normalize(arr) {
     const L = arr.map(plain).sort((a, b) => a.d - b.d || mins(a.s) - mins(b.s)); const cnt = {};
     L.forEach((b) => { cnt[b.cat] = cnt[b.cat] || 0; b.slot = cnt[b.cat]++; b.id = b.d + '-' + b.s; });
@@ -94,7 +94,8 @@
   }
   const modoOn = (di) => { let m = 'clases'; S.modoLog.forEach((x) => { if (x.from <= di) m = x.modo; }); return m; };
   // semana 1 = A; “Pasar a B” corre el ciclo una semana
-  const cycleOf = (d) => ((weekOf(d) + (S.cycleShift || 0)) % 2 === 1 ? 'A' : 'B');
+  // ciclo de 4 semanas: la semana 5 del plan (23 nov) es la Semana 1; “Pasar a la siguiente” corre el ciclo
+  const cycleOf = (d) => ((((weekOf(d) + (S.cycleShift || 0) - 1) % 4) + 4) % 4) + 1;
   const keyOf = (d) => (modoOn(iso(d)) === 'vacaciones' ? 'vac' + cycleOf(d) : 'clases');
   const SCHED = {};
   function sched(k) { if (!SCHED[k]) SCHED[k] = normalize((S.mine && S.mine[k]) || BASE[k]()); return SCHED[k]; }
@@ -1212,7 +1213,7 @@
     const mo = modoOn(iso(today())); const cy = cycleOf(today()); const kk = keyOf(today());
     h += '<div class="sec">🗓️ Tu horario</div><div class="card"><div class="f" style="margin-top:0">MODO</div><div class="row2"><button class="btn ' + (mo === 'clases' ? 'cy' : 'alt') + ' sm" data-act="modoC">🏫 Clases</button><button class="btn ' + (mo === 'vacaciones' ? 'cy' : 'alt') + ' sm" data-act="modoV">🏖️ Vacaciones</button></div>';
     h += '<div class="muted" style="margin:6px 0 4px">Lo cambias cuando quieras. Con clases vuelve tu horario de colegio (ya sin la tienda).</div>';
-    if (mo === 'vacaciones') h += '<div class="f">CICLO DE 2 SEMANAS</div><div class="set-row"><span>Esta semana: <b>Semana ' + cy + (cy === 'A' ? ' · Enfoque' : ' · Variedad') + '</b></span><button class="chipbtn" data-act="cyc">Pasar a ' + (cy === 'A' ? 'B' : 'A') + '</button></div><div class="set-row"><span class="muted">Próxima: Semana ' + (cy === 'A' ? 'B' : 'A') + '</span><span class="muted">' + fmtShort(addDays(mondayOf(weekOf(today())), 7)) + '</span></div>';
+    if (mo === 'vacaciones') { const nx = cy % 4 + 1; h += '<div class="f">CICLO DE 4 SEMANAS</div><div class="set-row"><span>Esta semana: <b>' + esc(HORARIO_VAC[cy].n) + '</b><br><span class="muted">' + esc(HORARIO_VAC[cy].desc) + '</span></span><button class="chipbtn" data-act="cyc">Pasar a la ' + nx + '</button></div><div class="set-row"><span class="muted">Próxima: ' + esc(HORARIO_VAC[nx].n) + '</span><span class="muted">' + fmtShort(addDays(mondayOf(weekOf(today())), 7)) + '</span></div>'; }
     h += '<div class="set-row"><span class="muted">Para cambiar un bloque, tócalo en Hoy → ✎ Cambiar</span>' + (S.mine && S.mine[kk] ? '<button class="chipbtn" data-act="resetH">Volver al original</button>' : '') + '</div></div>';
 
     // Vacaciones del colegio (ya no se muestra: lo reemplaza el modo)
@@ -1273,7 +1274,7 @@
         S.vac = { from: f, to: t2 || '' }; save(); scheduleNotifs(); renderYo(); toast('🏖️ Vacaciones guardadas');
       }
       if (act === 'modoC' || act === 'modoV') { setModo(act === 'modoV' ? 'vacaciones' : 'clases'); renderYo(); toast(act === 'modoV' ? '🏖️ Modo vacaciones desde hoy' : '🏫 Modo clases desde hoy'); return; }
-      if (act === 'cyc') { S.cycleShift = (S.cycleShift || 0) + 1; save(); applySchedule(); scheduleNotifs(); changed(); renderYo(); toast('Esta semana ahora es la Semana ' + cycleOf(today())); return; }
+      if (act === 'cyc') { S.cycleShift = (S.cycleShift || 0) + 1; save(); applySchedule(); scheduleNotifs(); changed(); renderYo(); toast('Esta semana ahora es la ' + HORARIO_VAC[cycleOf(today())].n); return; }
       if (act === 'resetH') { if (!a.dataset.sure) { a.dataset.sure = '1'; a.textContent = '¿Seguro?'; a.style.color = '#ff5252'; return; } resetSchedule(keyOf(today())); renderYo(); toast('Horario original de vuelta. Tus marcas siguen.'); return; }
       if (act === 'vacDel') { S.vac = null; save(); scheduleNotifs(); renderYo(); toast('Vacaciones quitadas'); }
     };
@@ -1493,13 +1494,15 @@
     const prevSeen = S.seenVersion || 1;
     S.seenVersion = APP_VERSION; if (S.appUpd && S.appUpd.version <= APP_VERSION) S.appUpd = null; save();
     openSheet('<div class="det"><h2>Novedades de NEXO PLAN ' + APP_NAME + ' ✨</h2>' +
+      '<div class="step"><b>🔁</b><span><b>Ciclo de 4 semanas:</b> Enfoque App Web, Cámara y edición, Negocio y Días temáticos. Cada día: 12 h de trabajo, 4 de descanso y 8 de sueño. Lo mínimo del día son “Tus 3 de hoy”. Míralo en Progreso → Tu horario.</span></div>' +
+      '<div class="step"><b>💻</b><span><b>En el PC</b> ahora se ve a lo ancho: menú a la izquierda, tu día en dos columnas y atajos (1–5 pestañas, N nueva tarea, ← → días, Esc cerrar).</span></div>' +
+      (prevSeen < 8 ? '' +
       '<div class="step"><b>🏖️</b><span><b>Modo vacaciones</b> (ya está puesto): en Progreso cambias entre 🏫 Clases y 🏖️ Vacaciones cuando quieras. Ya no aparece la tienda.</span></div>' +
-      '<div class="step"><b>🔁</b><span><b>Ciclo de 2 semanas:</b> la Semana A (enfoque) y la Semana B (variedad) se turnan solas. Máximo 4 bloques de trabajo al día y tardes libres.</span></div>' +
       '<div class="step"><b>↪</b><span><b>Lo que no haces se arrastra:</b> si no marcas un bloque, su tarea pasa al siguiente bloque del mismo proyecto y te dice cuántas veces va sin hacerse.</span></div>' +
       '<div class="step"><b>🎯</b><span><b>Tus 3 de hoy</b> arriba en Mi día: si solo haces eso, ganaste el día.</span></div>' +
       '<div class="step"><b>＋</b><span><b>Guardar rápido:</b> toca + y escribe “comprar cartulina mañana 4 pm”. Toca un bloque → “✎ Cambiar” para moverlo solo hoy o siempre.</span></div>' +
       '<div class="step"><b>📱</b><span><b>Ya está para iPhone y PC:</b> abre nexopc.github.io/Nexo-plan en Safari (iPhone) o Chrome/Edge (PC) e instálala.</span></div>' +
-      '<div class="step"><b>☁️</b><span><b>La misma información en tus 3 dispositivos:</b> en Progreso → “Crear mi Código NEXO”. En los otros, “Ya tengo un código”. Guarda bien tu clave.</span></div>' +
+      '<div class="step"><b>☁️</b><span><b>La misma información en tus 3 dispositivos:</b> en Progreso → “Crear mi Código NEXO”. En los otros, “Ya tengo un código”. Guarda bien tu clave.</span></div>' : '') +
       (prevSeen < 5 ? '<div class="step"><b>✓</b><span><b>Marca tus bloques con 3 opciones:</b> toca el cuadro de un bloque y escoge ✓ Hecho, ½ A medias o ✕ No pude. Al terminar cada bloque te llega un aviso con los 3 botones, y a las 8:35 pm “Cierra tu día”.</span></div>' +
       '<div class="step"><b>⚡</b><span><b>Metas por días:</b> las de ejercicio, sueño, inglés y revisión semanal se llenan solas con tus bloques y se chulean solas al llegar. Las demás (leer, agua, gastos, cámara…) traen casillas: márcalas en Hoy → “Marca tus días de hoy”.</span></div>' +
       '<div class="step"><b>👤</b><span><b>Tu perfil en el asistente:</b> Harvey y Mike ya saben quién eres, tu horario y tus proyectos. Pregúntales “¿qué sabes de mí?” o “¿por qué voy mal?”. Puedes editarlo y no sale del celular.</span></div>' +
