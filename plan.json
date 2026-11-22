@@ -1,9 +1,9 @@
 {
-  "version": "2026-11-22-app-1.7",
+  "version": "2026-11-22-app-1.7b",
   "mensaje": "NEXO PLAN 1.7: tu ciclo de 4 semanas ya está cargado (12 h de trabajo, 4 de descanso y 8 de sueño). Mañana lunes 23 empieza la Semana 1 · Enfoque App Web. Lo mínimo de cada día son “Tus 3 de hoy”. En el PC ahora se ve a lo ancho.",
   "sesiones": {},
   "app": {
-    "version": 9,
+    "version": 10,
     "nombre": "1.7",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
     "notas": "Ciclo de 4 semanas (12 h de trabajo al día) y versión de PC a lo ancho con menú lateral y atajos."

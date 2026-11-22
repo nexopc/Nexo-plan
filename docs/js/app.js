@@ -1,7 +1,7 @@
 /* NEXO PLAN — lógica de la app */
 (function () {
   'use strict';
-  const APP_VERSION = 9, APP_NAME = '1.7';
+  const APP_VERSION = 10, APP_NAME = '1.7';
   const N = window.NexoNative || null; // puente con Android (no existe en el navegador)
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -194,6 +194,8 @@
   // primera vez con la 1.6: vacaciones desde hoy y la fila empieza esta semana
   if (!S.modoLog.length && !S.qStart) S.modoLog.push({ from: iso(today()), modo: 'vacaciones' });
   if (!S.qStart) { S.qStart = iso(mondayOf(weekOf(today()))); save(); }
+  // 1.7: el ciclo de 4 semanas arranca el lunes 23 nov; la fila empieza limpia ese día
+  if (!S.q17) { if (S.qStart < '2026-11-23') S.qStart = '2026-11-23'; S.q17 = 1; save(); }
   applySchedule();
   function skipTask(cat, idx) { S.qSkip = S.qSkip || {}; (S.qSkip[cat] = S.qSkip[cat] || []).push(idx); QMEMO = null; save(); scheduleNotifs(); }
   const metaKey = (pid, id) => pid + ':' + id;
