@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-15-sem4",
-  "mensaje": "Semana 4: Flexbox, tu primera pantalla en Figma y audio limpio en Filmora. Como ya no estás en la tienda, usa martes y jueves de 3:30 a 6:30 pm para App Web o Edición: es tu ventaja de tiempo, no la regales. Marca tus bloques (✓, ½ o ✕) y el domingo haz tu revisión semanal.",
+  "version": "2026-11-22-app-1.6",
+  "mensaje": "NEXO PLAN 1.6 está lista: modo vacaciones, ciclo de 2 semanas (A y B), tareas que se arrastran al siguiente bloque, guardado rápido con +, y la misma información en tu Android, iPhone y PC con tu Código NEXO (Progreso → Sincronizar).",
   "sesiones": {},
   "app": {
-    "version": 7,
-    "nombre": "1.4",
+    "version": 8,
+    "nombre": "1.6",
     "apk": "https://github.com/nexopc/Nexo-plan/raw/main/apk/NEXO-PLAN.apk",
-    "notas": "Vuelve a la versión 1.4 (sin los cambios de horario de la 1.5). Tu progreso no se pierde."
+    "notas": "Vacaciones con ciclo A/B, tareas que se arrastran, guardado rápido, versión iPhone y PC, y sincronización con Código NEXO."
   }
 }
