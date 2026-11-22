@@ -57,8 +57,9 @@
 <script>
 // versión web (iPhone): se instala desde Safari y se actualiza sola
 if (!window.NexoNative && 'serviceWorker' in navigator && location.protocol === 'https:') {
+  var hadCtrl = !!navigator.serviceWorker.controller; // la primera vez se instala, no se “actualiza”
   navigator.serviceWorker.register('sw.js').then(function (r) {
-    r.addEventListener('updatefound', function () { var w = r.installing; w && w.addEventListener('statechange', function () { if (w.state === 'activated' && navigator.serviceWorker.controller) { if (window.NP) NP.toast('⬆️ NEXO PLAN se actualizó. Se aplica al volver a abrir.', 4000); } }); });
+    r.addEventListener('updatefound', function () { var w = r.installing; w && w.addEventListener('statechange', function () { if (w.state === 'activated' && hadCtrl) { if (window.NP) NP.toast('⬆️ NEXO PLAN se actualizó. Se aplica al volver a abrir.', 4000); } }); });
   }).catch(function () {});
 }
 </script>
