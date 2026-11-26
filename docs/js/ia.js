@@ -7,9 +7,9 @@
   const IKEY = 'nexoplan.ia'; // solo en este dispositivo (no viaja con el Código NEXO)
   const cfg = () => { try { return JSON.parse(localStorage.getItem(IKEY) || '{}'); } catch (e) { return {}; } };
   const setCfg = (o) => { try { localStorage.setItem(IKEY, JSON.stringify(Object.assign(cfg(), o))); } catch (e) {} };
-  // si ya pusiste la clave en Harvey (red NEXO, mismo sitio), se usa la misma
-  const sharedKey = () => { try { return JSON.parse(localStorage.getItem('nexo:pref:anthropicKey') || 'null'); } catch (e) { return null; } };
-  const apiKey = () => cfg().key || sharedKey() || '';
+  // La clave de Claude vive en el servidor de la red NEXO (función harvey de Supabase). Aquí solo va tu sesión de Google.
+  const HARVEY_URL = 'https://tfdxuqvsqdrvbgujooya.supabase.co/functions/v1/harvey';
+  const token = async () => (window.NEXO_NUBE ? window.NEXO_NUBE.token() : null);
   const CAT_OK = ['app', 'video', 'creador', 'agencia', 'nexo', 'ingles', 'ejercicio', 'cliente', 'tareas', 'colegio', 'dormir', 'rutina', 'libre'];
   const RAZONES = ['Me salió algo', 'No alcancé lo de antes', 'Tengo examen o entrega', 'Estoy cansado', 'Tengo más tiempo libre', 'Llegó un cliente'];
 
@@ -39,8 +39,9 @@ Reglas:
 
   async function propose(d, razon) {
     const { Anthropic, betaJSONSchemaOutputFormat } = await import('../vendor/anthropic/anthropic.js');
-    // la clave se guarda solo en este dispositivo
-    const client = new Anthropic({ apiKey: apiKey(), dangerouslyAllowBrowser: true });
+    const t = await token();
+    if (!t) throw new Error('Entra con Google en Progreso → Red NEXO para usar la IA.');
+    const client = new Anthropic({ apiKey: 'nexo', baseURL: HARVEY_URL, dangerouslyAllowBrowser: true, defaultHeaders: { Authorization: 'Bearer ' + t } });
     const res = await client.beta.messages.parse({
       model: cfg().model || 'claude-opus-5-5', max_tokens: 16000,
       output_config: { effort: 'medium', format: betaJSONSchemaOutputFormat(SCHEMA) },
@@ -60,7 +61,6 @@ Reglas:
   // ---------- Hoja: pedir ----------
   let busy = false;
   function openAsk() {
-    if (!apiKey()) return openKey(true);
     const d = dayDate(); const sel = new Set();
     const draw = () => {
       X.openSheet('<div class="det"><h2>🟣 Reorganizar ' + (X.iso(d) === X.iso(X.today()) ? 'mi día' : esc(X.fmtDate(d))) + '</h2>' +
@@ -69,7 +69,7 @@ Reglas:
         '<textarea id="iaTxt" rows="3" placeholder="Ej: me pusieron examen de química mañana y hoy salgo a las 3"></textarea>' +
         '<button class="btn" data-go="1">🟣 Reorganizar</button>' +
         (X.S.dayEdit[X.iso(d)] ? '<button class="btn alt sm" data-reset="1">↺ Volver a mi horario normal en este día</button>' : '') +
-        '<button class="btn alt sm" data-key="1">⚙︎ Clave y modelo de IA</button></div>');
+        '<button class="btn alt sm" data-key="1">⚙︎ Modelo de IA</button></div>');
     };
     draw();
     $('#sheet').onclick = (e) => {
@@ -86,7 +86,8 @@ Reglas:
     try { const out = await propose(d, razon); preview(d, razon, out); }
     catch (err) {
       const st = err && err.status;
-      const msg = st === 401 ? 'La clave de IA no es válida. Revísala en ⚙︎.' : st === 429 ? 'Muchas solicitudes seguidas. Espera un minuto.' : st >= 500 ? 'La IA está saturada. Intenta en un rato.' : !navigator.onLine ? 'Necesitas internet para reorganizar con IA.' : (err.message || 'No se pudo reorganizar.');
+      const server = err && err.error && err.error.error && err.error.error.message;
+      const msg = server ? server : st === 401 ? 'Tu sesión venció. Entra de nuevo con Google en Progreso.' : st === 429 ? 'Muchas solicitudes seguidas. Espera un minuto.' : st >= 500 ? 'La IA está saturada. Intenta en un rato.' : !navigator.onLine ? 'Necesitas internet para reorganizar con IA.' : (err.message || 'No se pudo reorganizar.');
       X.openSheet('<div class="det"><h2>No se pudo 😕</h2><p>' + esc(msg) + '</p><button class="btn alt" data-close="1">Cerrar</button></div>');
       $('#sheet').onclick = (e) => { if (e.target.closest('[data-close]')) X.closeSheet(); };
     }
@@ -118,17 +119,16 @@ Reglas:
     };
   }
 
-  // ---------- Clave y modelo ----------
-  function openKey(thenAsk) {
+  // ---------- Modelo ----------
+  function openKey() {
     const c = cfg();
-    X.openSheet('<div class="det"><h2>⚙︎ IA de NEXO PLAN</h2><p>Para reorganizar con IA se usa la API de Claude. La clave se guarda solo en este dispositivo.' + (sharedKey() ? ' <b>Ya tienes la clave de Harvey (red NEXO): no hace falta ponerla otra vez.</b>' : '') + '</p>' +
-      '<div class="f">CLAVE DE CLAUDE</div><input id="iaKey" type="password" autocomplete="off" placeholder="sk-ant-…" value="' + esc(c.key || '') + '">' +
+    X.openSheet('<div class="det"><h2>⚙︎ IA de NEXO PLAN</h2><p>🔒 La clave de Claude vive en el servidor de la red NEXO, no en tu celular. Tope de gasto: US$0,50 al día.</p>' +
       '<div class="f">MODELO</div><div class="chips wrap">' + [['claude-opus-5-5', 'Opus 5.5 · el mejor'], ['claude-sonnet-5-5', 'Sonnet 5.5 · más barato']].map(([k, l]) => '<button class="chip ' + ((c.model || 'claude-opus-5-5') === k ? 'on' : '') + '" data-m="' + k + '">' + l + '</button>').join('') + '</div>' +
-      '<p class="muted" style="margin-top:6px">Créala en platform.claude.com → API keys y ponle un límite de gasto. Cada reorganización cuesta menos de $100 COP con Opus 5.5.</p>' +
-      '<button class="btn" data-save="1">Guardar</button></div>');
+      '<p class="muted" style="margin-top:6px">Cada reorganización cuesta entre $100 y $200 COP con Opus 5.5.</p>' +
+      '<button class="btn alt" data-close="1">Listo</button></div>');
     $('#sheet').onclick = (e) => {
-      const m = e.target.closest('[data-m]'); if (m) { setCfg({ model: m.dataset.m, key: $('#iaKey').value.trim() || c.key }); openKey(thenAsk); return; }
-      if (e.target.closest('[data-save]')) { setCfg({ key: $('#iaKey').value.trim() }); X.closeSheet(); X.toast('Guardado'); if (thenAsk && apiKey()) setTimeout(openAsk, 250); }
+      const m = e.target.closest('[data-m]'); if (m) { setCfg({ model: m.dataset.m }); openKey(); return; }
+      if (e.target.closest('[data-close]')) X.closeSheet();
     };
   }
 

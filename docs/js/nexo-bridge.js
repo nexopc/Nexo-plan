@@ -27,11 +27,13 @@
       ch && ch.postMessage({ col: 'planBridge' });
     } catch (e) { console.warn('puente NEXO', e); }
   }
-  function applyInbox() {
-    let q; try { q = JSON.parse(localStorage.getItem(INBOX) || '[]'); } catch (e) { q = []; }
-    if (!Array.isArray(q) || !q.length) return;
+  // Aplica mensajes de Harvey (vienen del buzón local o de la nube). Cada mensaje se aplica una sola vez.
+  const DONE = 'nexoplan.inboxHecho';
+  function apply(list) {
+    let done; try { done = JSON.parse(localStorage.getItem(DONE) || '[]'); } catch (e) { done = []; }
     let n = 0;
-    q.forEach((m) => {
+    (list || []).forEach((m) => {
+      if (!m || (m.id && done.includes(m.id))) return;
       if (m.type === 'dayEdit' && /^\d{4}-\d{2}-\d{2}$/.test(m.date) && Array.isArray(m.blocks)) {
         X.S.dayEdit[m.date] = m.blocks.filter((b) => /^\d{2}:\d{2}$/.test(b.s || b.start) && /^\d{2}:\d{2}$/.test(b.e || b.end) && (b.title))
           .map((b) => { const cat = OK.includes(b.cat) ? b.cat : KIND[b.kind] || 'rutina'; return { s: b.s || b.start, e: b.e || b.end, cat, title: String(b.title) }; })
@@ -43,13 +45,27 @@
         X.S.tasks.push({ id: 't' + Date.now().toString(36) + n, type: ['tarea', 'examen', 'expo', 'grupo'].includes(m.tipo) ? m.tipo : 'tarea', title: String(m.title), subj: m.subj || '', due, mode: 'custom', notes: m.notes || '🟣 Desde Harvey', created: Date.now(), done: false });
         n++;
       }
+      if (m.id) done.push(m.id);
     });
-    localStorage.removeItem(INBOX);
-    if (n) { X.save(); X.reload(); X.toast('🟣 Harvey actualizó tu plan (' + n + ')', 3500); }
+    localStorage.setItem(DONE, JSON.stringify(done.slice(-300)));
+    if (n) { X.save(); X.reload(); }
+    return n;
   }
+  // Buzón local (mismo dispositivo): NEXO Brain guarda los mensajes en nexo:data:planInbox
+  function applyInbox() {
+    const k = 'nexo:data:planInbox';
+    let arr; try { arr = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { arr = []; }
+    let legacy; try { legacy = JSON.parse(localStorage.getItem(INBOX) || '[]'); } catch (e) { legacy = []; }
+    const pend = arr.filter((r) => !r._deleted);
+    if (!pend.length && !legacy.length) return;
+    const n = apply(pend.concat(legacy));
+    localStorage.removeItem(INBOX);
+    if (n) X.toast('🟣 Harvey actualizó tu plan (' + n + ')', 3500);
+  }
+  window.NEXO_BRIDGE = { apply, publish };
   X.hooks.boot.push(() => { applyInbox(); publish(); });
   X.hooks.saved.push(() => { clearTimeout(publish.t); publish.t = setTimeout(publish, 400); });
-  window.addEventListener('storage', (e) => { if (e.key === INBOX && e.newValue) applyInbox(); });
+  window.addEventListener('storage', (e) => { if ((e.key === INBOX || e.key === 'nexo:data:planInbox') && e.newValue) applyInbox(); });
   ch && ch.addEventListener('message', (e) => { if (e.data && e.data.col === 'planInbox') applyInbox(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) applyInbox(); });
 })();
