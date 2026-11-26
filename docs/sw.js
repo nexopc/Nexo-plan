@@ -1,5 +1,5 @@
 /* NEXO PLAN — service worker: guarda la app para que abra sin internet y se actualice sola */
-const CACHE = 'nexoplan-1.7-2fca4c98';
+const CACHE = 'nexoplan-1.7-a96f1ea8';
 const FILES = [
   './css/app.css',
   './icons/apple-touch-icon.png',
@@ -16,6 +16,7 @@ const FILES = [
   './js/ejercicio.js',
   './js/firebase-config.js',
   './js/horario.js',
+  './js/ia.js',
   './js/mapa.js',
   './js/metas-agencia.js',
   './js/metas-app.js',
@@ -23,10 +24,12 @@ const FILES = [
   './js/metas-habitos.js',
   './js/metas-nexo.js',
   './js/metas-video.js',
+  './js/nexo-bridge.js',
   './js/sesiones.js',
   './js/sync.js',
   './js/voces.js',
   './manifest.webmanifest',
+  './vendor/anthropic/anthropic.js',
   './vendor/leaflet/LICENSE',
   './vendor/leaflet/leaflet.css',
   './vendor/leaflet/leaflet.js'
