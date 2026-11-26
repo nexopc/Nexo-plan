@@ -456,3 +456,14 @@ select { font: inherit; color: var(--tx); background: var(--card); border: 1px s
 }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: translate(-50%, -48%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+/* IA: reorganizar el día */
+.ia-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 0 0 12px; padding: 11px 14px; border-radius: 14px; background: linear-gradient(135deg, #7c4dff33, #00e5ff22); border: 1px solid #7c4dff88; color: var(--tx); font-weight: 800; font-size: 14px; }
+.ia-btn span { font-size: 16px; } .ia-btn em { font-style: normal; color: var(--amb); font-weight: 700; font-size: 12px; }
+.ia-btn:active { transform: scale(.98); }
+.ia-diff { background: var(--card); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; font-family: ui-monospace, Consolas, monospace; display: grid; gap: 3px; }
+.ia-diff .out { color: var(--red); } .ia-diff .in { color: var(--grn); }
+.ia-load { display: flex; gap: 8px; justify-content: center; padding: 24px 0; }
+.ia-load i { width: 10px; height: 10px; border-radius: 50%; background: var(--pur); animation: iadot 1s infinite; }
+.ia-load i:nth-child(2) { animation-delay: .15s; } .ia-load i:nth-child(3) { animation-delay: .3s; }
+@keyframes iadot { 50% { opacity: .3; transform: translateY(-4px); } }

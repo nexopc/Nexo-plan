@@ -1470,7 +1470,7 @@
     get S() { return S; }, save, saveQuiet, reload() { fix(); applyRemote(); applySchedule(); scheduleNotifs(); render(); }, $, esc, iso, parseIso, dow, mins, nowMin, today, addDays, atTime, weekOf, mondayOf, fmtDate, fmtShort, fmtWhen, h12, hhmmOf, dayDiff, hash, DAY, DIAS, DIAS_S, MESES,
     P, ORDER, RUTA, blocksOf, tripOf, vacOn, pausa, topicOf, pending, tasksDueAt, setTaskDone, TT, SUBJ, subj, nextSessions, sessionsOn, remindersOf, className, ejWeek, ejStreak,
     openTaskForm, openTask, taskCard, openBlock, openMeta, blockById, saveBlock, blockForm, quickAdd, modoOn, keyOf, cycleOf, setModo, queueAt, skipTask, blockState, blockWhy, setBlockState, blockScore, MOTIVOS_NO, voz, RUTA_CATS, metaKey, openTripForm, openSheet, closeSheet, openPage, closePage, toast, setTab, render, renderHoy, scheduleNotifs, isDone, setDone, ruta, getMeta, metaDone, nextPendingMeta, isNotifOn, openUrl, fetchText, regCb, N,
-    get tab() { return tab; }, get hoyView() { return hoyView; }, setHoyView(v) { hoyView = v; }, setEjDay(v) { ejDay = v; }, setMetaView(v, p) { metaView = v; rutaProj = p || ''; },
+    get tab() { return tab; }, get dayOffset() { return dayOffset; }, get hoyView() { return hoyView; }, setHoyView(v) { hoyView = v; }, setEjDay(v) { ejDay = v; }, setMetaView(v, p) { metaView = v; rutaProj = p || ''; },
     hooks: { notif: [], check: [], resume: [], yo: [], yoBind: [], yoClick: [], boot: [], changed: [], saved: [] }
   };
   NP.boot = function () {

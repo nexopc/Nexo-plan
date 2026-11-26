@@ -57,3 +57,9 @@ Las sesiones de 30 minutos son repasos o tareas cortas. Las de 2 horas son la pr
 Cuando la app instalada ve un `version` mayor que el suyo, muestra el botón "Descargar". Las actualizaciones semanales
 deben conservar este campo tal cual. Solo cambia cuando se publica un APK nuevo en `apk/NEXO-PLAN.apk`
 (firmado con la misma llave de NEXO PLAN y con versionCode mayor).
+
+## IA y red NEXO (nov 2026)
+- `docs/js/ia.js`: botón “🟣 Reorganizar mi día con IA” en Hoy → Mi día. Usa Claude (Opus 5.5 por defecto) con salida JSON estructurada, muestra lo que sale (−) y entra (+) y solo aplica con “Sí”. Escribe en `S.dayEdit[fecha]` (solo ese día; el horario base no cambia). La clave se guarda en `localStorage['nexoplan.ia']` (no viaja con el Código NEXO) o se reutiliza la de Harvey (`nexo:pref:anthropicKey`).
+- `docs/js/nexo-bridge.js`: publica el resumen del plan en `localStorage['nexo:data:planBridge']` para la red NEXO (github.com/nexopc/nexo-apps) y aplica el buzón `nexo:plan:inbox` (Harvey manda `dayEdit` y `task`). Funciona porque ambas apps viven en nexopc.github.io.
+- `docs/vendor/anthropic/anthropic.js`: SDK oficial de Claude empaquetado (sin internet para cargarlo).
+- Si cambias archivos de docs/, regenera la lista y el nombre de caché de `docs/sw.js`.
