@@ -1,5 +1,5 @@
 /* NEXO PLAN — service worker: guarda la app para que abra sin internet y se actualice sola */
-const CACHE = 'nexoplan-1.7-a96f1ea8';
+const CACHE = 'nexoplan-1.7-5cb7cbb8';
 const FILES = [
   './css/app.css',
   './icons/apple-touch-icon.png',
@@ -25,6 +25,7 @@ const FILES = [
   './js/metas-nexo.js',
   './js/metas-video.js',
   './js/nexo-bridge.js',
+  './js/nube.js',
   './js/sesiones.js',
   './js/sync.js',
   './js/voces.js',
@@ -32,7 +33,8 @@ const FILES = [
   './vendor/anthropic/anthropic.js',
   './vendor/leaflet/LICENSE',
   './vendor/leaflet/leaflet.css',
-  './vendor/leaflet/leaflet.js'
+  './vendor/leaflet/leaflet.js',
+  './vendor/supabase/supabase.js'
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
