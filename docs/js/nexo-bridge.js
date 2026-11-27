@@ -45,6 +45,14 @@
         X.S.tasks.push({ id: 't' + Date.now().toString(36) + n, type: ['tarea', 'examen', 'expo', 'grupo'].includes(m.tipo) ? m.tipo : 'tarea', title: String(m.title), subj: m.subj || '', due, mode: 'custom', notes: m.notes || '🟣 Desde Harvey', created: Date.now(), done: false });
         n++;
       }
+      // Grabaciones de NEXO Studio: cita 🔒 fija con lugar y planos; la misma clave actualiza la cita (fecha, hora o lugar)
+      if (m.type === 'cita' && m.title && Number(m.start)) {
+        X.S.agenda = X.S.agenda || [];
+        const cur = m.key && X.S.agenda.find((a) => a.kind === 'cita' && a.ext === m.key);
+        const data = { title: String(m.title), start: Number(m.start), end: Number(m.end) || Number(m.start) + 3600e3, place: m.place || null, notes: m.notes || '' };
+        if (cur) Object.assign(cur, data); else X.S.agenda.push(Object.assign({ id: 'c' + Date.now().toString(36) + n, kind: 'cita', ext: m.key || null, done: false, created: Date.now() }, data));
+        n++;
+      }
       if (m.id) done.push(m.id);
     });
     localStorage.setItem(DONE, JSON.stringify(done.slice(-300)));
