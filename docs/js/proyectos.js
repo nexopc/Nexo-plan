@@ -43,16 +43,19 @@
   const pst = () => (X.S.projStatus = X.S.projStatus || {});
   function builtIn() {
     return X.ORDER.map((pid) => { const p = X.P[pid]; const total = p.areas.reduce((a, ar) => a + ar.metas.length, 0);
-      return { id: pid, builtin: true, name: p.name, color: p.color, status: pst()[pid] || 'activo', total, done: X.countDone(pid), center: p.center, plazo: p.plazo }; });
+      const ts = B.list('tareas').filter((t) => t.project === pid);
+      return { id: pid, builtin: true, name: p.name, color: p.color, status: pst()[pid] || 'activo', total: ts.length, done: ts.filter((t) => t.done).length }; });
   }
   function mine() { return B.list('proyectos').map((p) => { const ts = B.list('tareas').filter((t) => t.project === p.id); return { id: p.id, name: p.name, color: p.color || '#00e5ff', status: p.status || 'activo', start: p.start, total: ts.length, done: ts.filter((t) => t.done).length, goal: p.goal }; }); }
   const allProjects = () => builtIn().concat(mine());
+  const notesOf = (id) => (X.P[id] ? ((X.S.projNotes || {})[id] || '') : ((B.get('proyectos', id) || {}).notes || ''));
+  function setNotes(id, v) { if (X.P[id]) { X.S.projNotes = X.S.projNotes || {}; X.S.projNotes[id] = v; X.save(); } else B.update('proyectos', id, { notes: v }); }
   const projName = (id) => (X.P[id] ? X.P[id].name : (B.get('proyectos', id) || {}).name || '');
   const projActive = (id) => { if (!id) return true; const s = X.P[id] ? (pst()[id] || 'activo') : ((B.get('proyectos', id) || {}).status || 'activo'); return s === 'activo'; };
 
   // ---------- Vista Proyectos / Tareas ----------
   function header() {
-    return '<div class="sw2"><button class="' + (view === 'proyectos' ? 'on' : '') + '" data-pv="proyectos">🚀 Proyectos</button><button class="' + (view === 'tareas' ? 'on' : '') + '" data-pv="tareas">✅ Tareas</button><button data-pv="ruta">🧭 Mi ruta</button></div>';
+    return '<div class="sw2"><button class="' + (view === 'proyectos' ? 'on' : '') + '" data-pv="proyectos">🚀 Proyectos</button><button class="' + (view === 'tareas' ? 'on' : '') + '" data-pv="tareas">✅ Tareas</button></div>';
   }
   function render() {
     let h = header();
@@ -71,11 +74,11 @@
       h += '<div class="sec">' + ic + ' ' + lb + ' (' + L.length + ')</div>';
       L.forEach((p) => {
         h += '<div class="item" style="--c:' + p.color + '" data-pr="' + esc(p.id) + '"><div class="bd" style="flex:1;min-width:0"><div class="t">' + esc(p.name) + '</div><div class="h">' +
-          (p.builtin ? p.done + '/' + p.total + ' metas · ' + esc(p.plazo || '') : (p.total ? p.done + '/' + p.total + ' tareas' : (k === 'idea' ? 'Toca para volverla proyecto' : 'Sin tareas: pártelo en pasos pequeños'))) +
+          (p.total ? p.done + '/' + p.total + ' tareas' : (k === 'idea' ? 'Toca para volverla proyecto' : 'Sin tareas: pártelo en pasos pequeños')) + (notesOf(p.id) ? ' · 📝' : '') +
           (k === 'futuro' && p.start ? ' · empieza ' + esc(p.start) : '') + '</div>' + (p.total ? bar(p.done, p.total, p.color) : '') + '</div></div>';
       });
     });
-    h += '<p class="muted" style="margin-top:10px">Tus 6 áreas de metas son proyectos: sus metas siguen marcándose igual y siguen apareciendo en tus bloques. Pausar un proyecto lo saca del organizador y de las metas atrasadas.</p>';
+    h += '<p class="muted" style="margin-top:10px">Cada proyecto es su nombre, tus notas y sus tareas. Sus tareas aparecen en sus bloques del día. Pausar un proyecto lo saca del organizador.</p>';
     return h;
   }
   function pendTasks() { return B.list('tareas').filter((t) => !t.done && projActive(t.project)).sort((a, b) => score(b) - score(a) || String(a.due || '9').localeCompare(String(b.due || '9'))); }
@@ -111,33 +114,31 @@
 
   // ---------- Página de un proyecto ----------
   let showAll = false;
+  function flushNotes() { const n = document.getElementById('prNotes'); if (n && n.dataset.pid && n.value !== notesOf(n.dataset.pid)) setNotes(n.dataset.pid, n.value); }
   function projectPage(id) {
+    flushNotes(); // si estabas escribiendo una nota, se guarda antes de redibujar
     const isB = !!X.P[id]; const p = isB ? X.P[id] : B.get('proyectos', id); if (!p) return;
     const status = isB ? (pst()[id] || 'activo') : (p.status || 'activo'); const color = p.color || '#00e5ff';
-    let h = '<button class="back" data-x="1">‹ Proyectos</button><div class="det"><div class="pill" style="background:' + color + '33;color:' + color + '">' + (isB ? 'ÁREA DE METAS · ' + X.countDone(id) + ' CUMPLIDAS' : 'PROYECTO') + '</div><h2>' + esc(p.name) + '</h2>';
-    if (isB) h += '<p>' + esc(p.center) + ' · <b>' + esc(p.plazo) + '</b></p>'; else if (p.goal) h += '<p>🎯 ' + esc(p.goal) + '</p>';
+    let h = '<button class="back" data-x="1">‹ Proyectos</button><div class="det"><div class="pill" style="background:' + color + '33;color:' + color + '">PROYECTO</div><h2>' + esc(p.name) + '</h2>';
     h += '<div class="f">ESTADO</div><div class="chips wrap">' + ST.map(([k, ic, lb]) => '<button class="chip ' + (status === k ? 'on' : '') + '" style="--cc:' + color + '" data-ps="' + k + '">' + ic + ' ' + lb + '</button>').join('') + '</div>';
     if (status === 'futuro' && !isB) h += '<div class="f">EMPIEZA</div><input type="date" id="prStart" value="' + esc(p.start || '') + '">';
+    h += '<div class="f">📝 NOTAS</div><textarea id="prNotes" data-pid="' + esc(id) + '" rows="4" placeholder="Ideas, enlaces, lo que no quieres olvidar de este proyecto…">' + esc(notesOf(id)) + '</textarea><div class="muted" id="prSaved" style="font-size:12px;min-height:16px"></div>';
     // tareas propias del proyecto
     const ts = B.list('tareas').filter((t) => t.project === id).sort((a, b) => (a.done - b.done) || score(b) - score(a));
     h += '<div class="sec">✅ Tareas (' + ts.filter((t) => !t.done).length + ' pendientes)</div><div class="prrow"><input id="prTask" maxlength="100" placeholder="＋ Paso pequeño… Enter" autocomplete="off"><button class="btn sm" data-addtp="1" >＋</button></div>';
     h += ts.map(taskRow).join('');
     if (isB) {
-      // metas pendientes en orden de ruta
-      const L = []; p.areas.forEach((ar, i) => ar.metas.forEach((m, j) => { const mid = (i + 1) + '.' + (j + 1); L.push({ mid, m, ar, done: X.metaDone(id, mid) }); }));
-      const pend = L.filter((x) => !x.done);
-      h += '<div class="sec">🎯 Metas pendientes (' + pend.length + ' de ' + L.length + ')</div>';
-      (showAll ? pend : pend.slice(0, 8)).forEach((x) => { h += '<div class="meta-row" style="--cc:' + color + '"><button class="chk" data-mc2="' + x.mid + '"></button><div style="flex:1;min-width:0" data-mo2="' + x.mid + '"><div class="t">' + x.mid + ' ' + esc(x.m.t) + '</div><div class="muted" style="font-size:12px">' + esc(x.ar.n) + ' · ' + esc(x.m.m || '') + '</div></div></div>'; });
-      if (pend.length > 8) h += '<button class="chipbtn" data-more="1">' + (showAll ? 'Ver menos' : 'Ver las ' + pend.length) + '</button>';
+      h += '<button class="btn alt sm" data-ped="1">✎ Cambiar nombre</button>';
     } else {
-      h += '<button class="btn alt sm" data-ped="1">✎ Cambiar nombre o meta</button><button class="btn alt sm" data-pdel="1" style="color:#ff5252">Borrar proyecto</button>';
+      h += '<button class="btn alt sm" data-ped="1">✎ Cambiar nombre</button><button class="btn alt sm" data-pdel="1" style="color:#ff5252">Borrar proyecto</button>';
     }
     h += '</div>';
     X.openPage(h);
     const inp = $('#prTask'); if (inp) inp.onkeydown = (e) => { if (e.key === 'Enter') { addTaskQuick(id); projectPage(id); } };
-    $('#page').onchange = (e) => { if (e.target.id === 'prStart') { B.update('proyectos', id, { start: e.target.value }); } };
+    $('#page').onchange = (e) => { if (e.target.id === 'prStart') { B.update('proyectos', id, { start: e.target.value }); } if (e.target.id === 'prNotes') flushNotes(); };
+    let nt = 0; $('#page').oninput = (e) => { if (e.target.id !== 'prNotes') return; clearTimeout(nt); const v = e.target.value; nt = setTimeout(() => { setNotes(id, v); const sv = $('#prSaved'); if (sv) sv.textContent = '✓ Guardado'; }, 500); };
     $('#page').onclick = (e) => {
-      if (e.target.closest('[data-x]')) { X.closePage(); X.render(); return; }
+      if (e.target.closest('[data-x]')) { flushNotes(); X.closePage(); X.render(); return; }
       const ps = e.target.closest('[data-ps]');
       if (ps) { if (isB) { pst()[id] = ps.dataset.ps; X.save(); } else B.update('proyectos', id, { status: ps.dataset.ps }); X.toast(stOf(ps.dataset.ps)[1] + ' ' + stOf(ps.dataset.ps)[2]); projectPage(id); return; }
       if (e.target.closest('[data-addtp]')) { addTaskQuick(id); projectPage(id); return; }
@@ -153,9 +154,14 @@
     };
   }
   function renameProject(id) {
+    if (X.P[id]) {
+      X.openSheet('<div class="det"><div class="f" style="margin-top:0">NOMBRE</div><input id="pnN" maxlength="80" value="' + esc(X.P[id].name) + '"><button class="btn" data-pns="1">Guardar</button></div>');
+      $('#sheet').onclick = (e) => { if (e.target.closest('[data-pns]')) { const n = $('#pnN').value.trim(); if (!n) { X.toast('Ponle un nombre'); return; } X.S.projNames = X.S.projNames || {}; X.S.projNames[id] = n; X.P[id].name = n; X.save(); X.closeSheet(); projectPage(id); } };
+      return;
+    }
     const p = B.get('proyectos', id);
-    X.openSheet('<div class="det"><div class="f" style="margin-top:0">NOMBRE</div><input id="pnN" maxlength="80" value="' + esc(p.name) + '"><div class="f">¿QUÉ ES TERMINARLO?</div><input id="pnG" maxlength="160" value="' + esc(p.goal || '') + '" placeholder="Ej: 10 tiendas publicadas en la app"><button class="btn" data-pns="1">Guardar</button></div>');
-    $('#sheet').onclick = (e) => { if (e.target.closest('[data-pns]')) { const n = $('#pnN').value.trim(); if (!n) { X.toast('Ponle un nombre'); return; } B.update('proyectos', id, { name: n, goal: $('#pnG').value.trim() }); X.closeSheet(); projectPage(id); } };
+    X.openSheet('<div class="det"><div class="f" style="margin-top:0">NOMBRE</div><input id="pnN" maxlength="80" value="' + esc(p.name) + '"><button class="btn" data-pns="1">Guardar</button></div>');
+    $('#sheet').onclick = (e) => { if (e.target.closest('[data-pns]')) { const n = $('#pnN').value.trim(); if (!n) { X.toast('Ponle un nombre'); return; } B.update('proyectos', id, { name: n }); X.closeSheet(); projectPage(id); } };
   }
 
   // ---------- Hoja de una tarea (importancia y urgencia 1 a 5) ----------
@@ -303,5 +309,16 @@
   const fromHash = () => { if (location.hash === '#organizar') { history.replaceState(null, '', location.pathname); if (X.tab !== 'hoy') X.setTab('hoy'); setTimeout(() => organize(X.today()), 900); } };
   X.hooks.boot.push(fromHash); window.addEventListener('hashchange', fromHash);
 
-  window.PR = { render, organize, hoyHtml, hoyClick, ready, store: () => B, setView(v) { view = v; } };
+  Object.keys(X.S.projNames || {}).forEach((k) => { if (X.P[k]) X.P[k].name = X.S.projNames[k]; });
+  X.hooks.boot.push(() => { window.CNT = null; }); // contadores de metas: apagados (sin metas)
+  const pendingCount = () => pendTasks().length;
+  const topTask = () => pendTasks()[0] || null;
+  const nextTask = (pid) => (projActive(pid) ? B.list('tareas').filter((t) => t.project === pid && !t.done).sort((a, b) => score(b) - score(a))[0] || null : null);
+  function progressHtml() {
+    let h = '<div class="sec">Tus proyectos</div><div class="card">';
+    allProjects().filter((p) => p.status !== 'terminado' && p.status !== 'idea').forEach((p) => { h += '<div class="pbar"><div class="nm">' + esc(p.name) + '</div><div class="tr"><i style="width:' + (p.total ? p.done / p.total * 100 : 0) + '%;background:' + p.color + '"></i></div><div class="v">' + p.done + '/' + p.total + '</div></div>'; });
+    const all = B.list('tareas'); h += '<div class="muted">' + all.filter((t) => t.done).length + ' de ' + all.length + ' tareas hechas.</div></div>';
+    return h;
+  }
+  window.PR = { pendingCount, topTask, nextTask, progressHtml, render, organize, hoyHtml, hoyClick, ready, store: () => B, setView(v) { view = v; } };
 })();
