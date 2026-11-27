@@ -1,7 +1,7 @@
 /* NEXO PLAN — lógica de la app */
 (function () {
   'use strict';
-  const APP_VERSION = 13, APP_NAME = '1.10';
+  const APP_VERSION = 14, APP_NAME = '1.11';
   const NO_METAS = true; // (27 nov 2026) sin metas: los proyectos son nombre, notas y tareas
   const N = window.NexoNative || null; // puente con Android (no existe en el navegador)
   const $ = (s, r = document) => r.querySelector(s);
@@ -1514,6 +1514,7 @@
     const prevSeen = S.seenVersion || 1;
     S.seenVersion = APP_VERSION; if (S.appUpd && S.appUpd.version <= APP_VERSION) S.appUpd = null; save();
     openSheet('<div class="det"><h2>Novedades de NEXO PLAN ' + APP_NAME + ' ✨</h2>' +
+      '<div class="step"><b>🎯</b><span><b>Misiones de NEXO Negocios:</b> cobrar, hacer seguimiento, contactar prospectos… se crean solas según tu meta y ⚡ Organizar las mete en tus ratos Libre (en naranja). Al marcarlas aquí se marcan en Negocios.</span></div>' +
       (prevSeen < 13 ? '<div class="step"><b>‹</b><span><b>Botón Atrás en iPhone:</b> arriba a la izquierda siempre que haya a dónde volver, ✕ en cada ventana (o deslízala hacia abajo) y desliza desde el borde izquierdo para volver.</span></div>' : '') +
       '<div class="step"><b>🧹</b><span><b>Sin metas:</b> cada proyecto es solo su nombre, tus notas y sus tareas. Tus bloques muestran la próxima tarea del proyecto.</span></div>' +
       (prevSeen < 11 ? '<div class="step"><b>🚀</b><span><b>Proyectos:</b> tus 6 áreas son proyectos y puedes crear los tuyos desde una idea, con estado: activo, pausado o empieza después.</span></div>' +
