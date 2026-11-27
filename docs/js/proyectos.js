@@ -22,17 +22,18 @@
     update(c, id, p) { let o = null; this._w(c, this.raw(c).map((r) => (r.id === id ? (o = Object.assign({}, r, p, { updatedAt: new Date().toISOString() })) : r))); return o; },
     remove(c, id) { return this.update(c, id, { _deleted: true }); }, subscribe() { return () => {}; }, uid: () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
   };
-  let B = shim, PL = null;
+  let B = shim, PL = null, MI = null;
   const CORE = location.pathname.includes('/Nexo-plan/') || location.hostname.endsWith('github.io') ? '/nexo-apps/core/' : null;
   const ready = (async () => {
     if (!CORE) return;
     try {
       B = (await import(CORE + 'store.js')).store;
       PL = await import(CORE + 'planner.js').catch(() => null);
+      MI = await import(CORE + 'misiones.js').catch(() => null); // 🎯 misiones de NEXO Negocios
       // la sesión de Google ya la maneja nube.js; el núcleo la reutiliza (esperamos si se está entrando con ?code=)
       const go = () => import(CORE + 'sync.js').then((s) => s.cloud.init()).catch(() => {});
       /[?&]code=/.test(location.search) ? setTimeout(go, 8000) : go();
-      B.subscribe('*', (c) => { if (['tareas', 'proyectos', 'topics', 'timeLogs'].includes(c)) rerender(); });
+      B.subscribe('*', (c) => { if (['tareas', 'proyectos', 'topics', 'timeLogs', 'misiones'].includes(c)) rerender(); });
       rerender();
     } catch (e) { B = shim; }
   })();
@@ -211,7 +212,15 @@
     return pendTasks().filter((t) => !sched.has(t.id)).map((t) => {
       let s = score(t); if (t.due) { const k = Math.round((X.parseIso(t.due) - X.parseIso(di)) / X.DAY); if (k <= 0) s += 10; else if (k <= 2) s += 5; }
       return { kind: 'task', id: t.id, title: t.title, min: Number(t.minutes) || 30, score: s, imp: t.imp || 3, urg: t.urg || 3 };
-    });
+    }).concat(misCands(d));
+  }
+  // 🎯 Misiones de NEXO Negocios (cobrar, seguimientos, prospectos…): se crean solas para ese día y compiten por tus ratos libres
+  function misCands(d) {
+    const di = X.iso(d); if (!MI || di < X.iso(X.today())) return [];
+    try { MI.generar(di); } catch (e) { return []; }
+    const sched = new Set(X.S.agenda.filter((a) => a.kind === 'flex' && a.mision && a.slot).map((a) => a.mision));
+    return B.list('misiones').filter((m) => m.date === di && !m.done && !sched.has(m.id))
+      .map((m) => ({ kind: 'mision', id: m.id, title: m.title, min: Number(m.minutes) || 20, score: Math.round((Number(m.prio) || 70) / 5) + 2 }));
   }
   // huecos: bloques "Libre" del día, sin lo ya agendado, con margen, desde ahora y no pegado a la hora de levantarte
   function freeOf(d) {
@@ -254,12 +263,12 @@
       const n = P.filter((x) => x.on).length;
       let h = '<div class="det"><h2>⚡ Así quedaría ' + esc(label) + '</h2>';
       if (!P.length) {
-        const why = !pendTasks().length && !studyCands(d).length ? 'No tienes tareas pendientes ni horas de estudio por cubrir. Agrega tareas en Proyectos → ✅ Tareas.' : 'No encontré huecos libres suficientes ' + esc(label) + ' (uso solo tus bloques Libre, dejo ' + MARGIN + ' min entre cosas y ' + WAKE_GAP + ' min después de levantarte).';
-        h += '<div class="box">' + why + '</div>' + (pendTasks().length || studyCands(d).length ? '<button class="btn cy" data-otm="1">📅 Probar ' + (label === 'hoy' ? 'mañana' : 'el día siguiente') + '</button>' : '') + '<button class="btn alt" data-oc="1">Cerrar</button></div>'; X.openSheet(h); return;
+        const why = !taskCands(d).length && !studyCands(d).length ? 'No tienes tareas pendientes ni horas de estudio por cubrir. Agrega tareas en Proyectos → ✅ Tareas.' : 'No encontré huecos libres suficientes ' + esc(label) + ' (uso solo tus bloques Libre, dejo ' + MARGIN + ' min entre cosas y ' + WAKE_GAP + ' min después de levantarte).';
+        h += '<div class="box">' + why + '</div>' + (taskCands(d).length || studyCands(d).length ? '<button class="btn cy" data-otm="1">📅 Probar ' + (label === 'hoy' ? 'mañana' : 'el día siguiente') + '</button>' : '') + '<button class="btn alt" data-oc="1">Cerrar</button></div>'; X.openSheet(h); return;
       }
       h += '<p class="muted">Pongo lo más importante primero (importancia × urgencia), solo en tus bloques Libre y máximo ' + (MAX_MIN / 60) + ' h nuevas al día. Quita lo que no quieras:</p>';
       P.forEach((x, i) => {
-        h += '<div class="item ' + (x.on ? '' : 'no') + '" style="--c:' + (x.c.kind === 'study' ? '#ffc23d' : '#00e5ff') + ';opacity:' + (x.on ? 1 : .45) + '"><button class="chk" data-ot="' + i + '" aria-label="Incluir">' + (x.on ? '✓' : '') + '</button><div class="bd" data-ot="' + i + '"><div class="t">' + esc(x.c.title) + '</div><div class="h">' + X.h12(X.hhmmOf(x.at)) + ' – ' + X.h12(X.hhmmOf(x.end)) + ' · ' + x.len + ' min' + (x.c.kind === 'task' ? ' · prioridad ' + x.c.score : ' · estudio de la semana') + '</div></div></div>';
+        h += '<div class="item ' + (x.on ? '' : 'no') + '" style="--c:' + (x.c.kind === 'study' ? '#ffc23d' : x.c.kind === 'mision' ? '#ff8a1f' : '#00e5ff') + ';opacity:' + (x.on ? 1 : .45) + '"><button class="chk" data-ot="' + i + '" aria-label="Incluir">' + (x.on ? '✓' : '') + '</button><div class="bd" data-ot="' + i + '"><div class="t">' + esc(x.c.title) + '</div><div class="h">' + X.h12(X.hhmmOf(x.at)) + ' – ' + X.h12(X.hhmmOf(x.end)) + ' · ' + x.len + ' min' + (x.c.kind === 'task' ? ' · prioridad ' + x.c.score : x.c.kind === 'mision' ? ' · misión de Negocios' : ' · estudio de la semana') + '</div></div></div>';
       });
       if (P.left && P.left.length) h += '<div class="box warn" style="margin-top:8px">No cupo ' + esc(label) + ': ' + P.left.slice(0, 4).map((c) => esc(c.title) + ' (' + c.min + ' min)').join(', ') + '. Tus bloques Libre ' + esc(label) + ' suman solo ' + P.freeMin + ' min.<br><button class="chipbtn" data-otm="1">📅 Probar ' + (label === 'hoy' ? 'mañana' : 'el día siguiente') + '</button></div>';
       h += '<button class="btn" data-oa="1"' + (n ? '' : ' disabled style="opacity:.5"') + '>✓ Poner ' + n + ' en mi día</button><button class="btn alt sm" data-oc="1">Cancelar</button></div>';
@@ -272,7 +281,7 @@
       if (e.target.closest('[data-otm]')) { organize(X.addDays(d, 1)); return; }
       if (e.target.closest('[data-oa]')) {
         const sel = P.filter((x) => x.on); if (!sel.length) return;
-        sel.forEach((x) => { window.AG.addFlex({ title: x.c.title, dur: x.len, deadline: endOf(d), slot: x.at, tipo: 'general' }); const it = X.S.agenda[X.S.agenda.length - 1]; if (it) { it[x.c.kind === 'task' ? 'task' : 'topic'] = x.c.id; it.org = true; } });
+        sel.forEach((x) => { window.AG.addFlex({ title: x.c.title, dur: x.len, deadline: endOf(d), slot: x.at, tipo: 'general' }); const it = X.S.agenda[X.S.agenda.length - 1]; if (it) { it[{ task: 'task', mision: 'mision', study: 'topic' }[x.c.kind]] = x.c.id; it.org = true; } });
         X.save(); X.scheduleNotifs(); X.closeSheet(); X.render(); X.toast('⚡ ' + sel.length + ' en tu día. Si no alcanzas alguno, se reprograma solo.', 3500);
       }
     };
@@ -283,7 +292,7 @@
     const L = X.S.agenda.filter((x) => x.kind === 'flex' && x.slot && X.iso(new Date(x.slot)) === di).sort((a, b) => a.slot - b.slot);
     let h = '<div class="sec" style="display:flex;justify-content:space-between;align-items:center">⚡ Organizado' + (L.length ? ' (' + L.filter((x) => x.done).length + '/' + L.length + ')' : '') + '<button class="chipbtn onb" data-orgh="1" style="margin:0">⚡ Organizar</button></div>';
     if (!L.length) return h + '<p class="muted" style="margin:0 0 8px">Toca ⚡ Organizar: propongo dónde van tus tareas y tu estudio en tus ratos libres.</p>';
-    L.forEach((x) => { h += '<div class="item ' + (x.done ? 'done' : '') + '" style="--c:' + (x.topic ? '#ffc23d' : '#00e5ff') + '"><button class="chk" data-ofd="' + esc(x.id) + '">' + (x.done ? '✓' : '') + '</button><div class="bd" data-ofo="' + esc(x.id) + '"><div class="t">' + esc(x.title) + '</div><div class="h">' + X.h12(X.hhmmOf(x.slot)) + ' · ' + (x.dur || 30) + ' min' + (x.moves ? ' · reprogramado' : '') + '</div></div></div>'; });
+    L.forEach((x) => { h += '<div class="item ' + (x.done ? 'done' : '') + '" style="--c:' + (x.topic ? '#ffc23d' : x.mision ? '#ff8a1f' : '#00e5ff') + '"><button class="chk" data-ofd="' + esc(x.id) + '">' + (x.done ? '✓' : '') + '</button><div class="bd" data-ofo="' + esc(x.id) + '"><div class="t">' + esc(x.title) + '</div><div class="h">' + X.h12(X.hhmmOf(x.slot)) + ' · ' + (x.dur || 30) + ' min' + (x.moves ? ' · reprogramado' : '') + '</div></div></div>'; });
     return h;
   }
   function hoyClick(e, d) {
@@ -296,9 +305,10 @@
   X.hooks.saved.push(() => {
     (X.S.agenda || []).forEach((x) => {
       if (x.kind !== 'flex' || !x.done || x.synced) return;
-      if (!x.task && !x.topic) return;
+      if (!x.task && !x.topic && !x.mision) return;
       x.synced = true;
       if (x.task) { const t = B.get('tareas', x.task); if (t && !t.done) B.update('tareas', t.id, { done: true, doneAt: new Date().toISOString() }); }
+      if (x.mision) { const m = B.get('misiones', x.mision); if (m && !m.done) B.update('misiones', m.id, { done: true, doneAt: new Date().toISOString() }); }
       if (x.topic) B.add('timeLogs', { minutes: x.dur || 30, date: X.iso(new Date(x.slot || Date.now())), label: x.title.replace(/^📚 /, ''), kind: 'estudio', topic: x.topic });
       X.saveQuiet();
     });
