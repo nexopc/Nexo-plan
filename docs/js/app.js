@@ -1,7 +1,7 @@
 /* NEXO PLAN — lógica de la app */
 (function () {
   'use strict';
-  const APP_VERSION = 10, APP_NAME = '1.7';
+  const APP_VERSION = 11, APP_NAME = '1.8';
   const N = window.NexoNative || null; // puente con Android (no existe en el navegador)
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -80,7 +80,9 @@
   const ORDER = ['nexo', 'app', 'video', 'creador', 'agencia', 'habitos'];
   // ---------- Horarios: clases o vacaciones (cuando quieras) y ciclo de 2 semanas ----------
   const MODELO = HORARIO.map((b) => ({ d: b.d, s: b.s, e: b.e, cat: b.cat, title: b.title }));
-  const plain = (b) => { const o = { d: b.d, s: b.s, e: b.e, cat: b.cat, title: b.title }; if (b.was) o.was = b.was; return o; };
+  const plain = (b) => { const o = { d: b.d, s: b.s, e: b.e, cat: b.cat, title: b.title }; if (b.was) o.was = b.was; if (b.fijo) o.fijo = true; return o; };
+  // 🔒 fijo: colegio y dormir siempre; los demás si los marcas (el organizador y Harvey no los mueven)
+  const isFijo = (b) => !!(b && (b.fijo || b.cat === 'colegio' || b.cat === 'dormir'));
   // clases: el horario de siempre sin la tienda (renunció en nov 2026)
   const BASE = {
     clases: () => MODELO.map((b) => (b.cat === 'trabajo' ? { d: b.d, s: b.s, e: b.e, cat: 'libre', title: 'Libre', was: b.title } : plain(b))),
@@ -228,7 +230,7 @@
   const doneWeek = (x) => { const v = S.metas[metaKey(x.pid, x.id)]; return v ? weekOf(parseIso(v)) : null; };
   function ruta(pid) {
     const w = weekOf(today());
-    const L = RUTA.filter((x) => !pid || x.pid === pid);
+    const L = RUTA.filter((x) => (pid ? x.pid === pid : !(window.NP && NP.isPaused && NP.isPaused(x.pid))));
     const F = L.filter((x) => x.w);
     const pend = (x) => !metaDone(x.pid, x.id);
     const byE = (a, b) => a.w.e - b.w.e || a.w.s - b.w.s;
@@ -598,6 +600,7 @@
     const cntH = isToday && window.CNT ? CNT.hoyHtml() : '';
     if (cntH && nm >= 18 * 60) h += cntH;
     if (isToday) { const R = ruta(null); const n = R.atrasadas.length; h += '<button class="rutaline ' + (n ? 'bad' : '') + '" data-ruta="1">🧭 Tu ruta: ' + (n ? n + ' meta(s) atrasada(s) · deberías estar en ' + esc(P[R.atrasadas[0].pid].short) + ' ' + R.atrasadas[0].id : 'vas al día ✓ · ' + R.enCurso.length + ' meta(s) en curso') + ' ›</button>'; }
+    if (window.PR) h += PR.hoyHtml(d); // ⚡ lo organizado, arriba y a la vista
     if (!Object.keys(S.anchors).length && isToday) h += '<div class="box">⚓ <strong>Escoge 3 bloques ancla:</strong> los que no negocias pase lo que pase. Toca un bloque y luego “Hacer bloque ancla”. Cuando esos estén firmes, sumas los demás.</div>';
     bl.forEach((b) => {
       const c = CATS[b.cat]; const pz = pausa(b, d);
@@ -607,7 +610,7 @@
       const stTxt = st === 'half' ? '½ A medias' : st === 'no' ? '✕ No pude' + (why ? ' · ' + why : '') : '';
       h += '<div class="item ' + ({ ok: 'done ', half: 'half ', no: 'no ' }[st] || '') + (isCur ? 'cur' : '') + '" style="--c:' + c.color + '">' +
         '<button class="chk" data-chk="' + b.id + '" aria-label="Marcar ' + esc(b.title) + '">' + ({ ok: '✓', half: '½', no: '✕' }[st] || '') + '</button>' +
-        '<div class="bd" data-open="' + b.id + '"><div class="t">' + (S.anchors[b.id] ? '⚓ ' : '') + esc(b.title) + '</div><div class="h">' + h12(b.s) + ' – ' + h12(b.e) + (stTxt ? ' · <span class="stt">' + esc(stTxt) + '</span>' : '') + '</div>' +
+        '<div class="bd" data-open="' + b.id + '"><div class="t">' + (S.anchors[b.id] ? '⚓ ' : '') + (b.fijo ? '🔒 ' : '') + esc(b.title) + '</div><div class="h">' + h12(b.s) + ' – ' + h12(b.e) + (stTxt ? ' · <span class="stt">' + esc(stTxt) + '</span>' : '') + '</div>' +
         (tp.t && b.cat !== 'colegio' && !stTxt ? '<div class="sub">' + esc(tp.t) + '</div>' : '') + (tp.carry && !st ? '<div class="carry">↪ ' + tp.carry + ' bloque' + (tp.carry > 1 ? 's' : '') + ' sin hacer' + (tp.carry >= 3 ? ' · sigue aquí' : '') + '</div>' : '') + (isCur && !st ? '<div class="sub cy">AHORA · toca el cuadro para marcar</div>' : '') + '</div>' +
         (c.tag ? '<div class="tag">' + c.tag + '</div>' : '') + '</div>';
       if (markOpen === di + '|' + b.id) {
@@ -630,6 +633,7 @@
     $('#view').innerHTML = h;
     $('#view').onclick = (e) => {
       if (onUpd(e)) return;
+      if (window.PR && PR.hoyClick(e, d)) return;
       const v = e.target.closest('[data-v]'); if (v) { hoyView = v.dataset.v; renderHoy(); return; }
       const a = e.target.closest('[data-a]'); if (a) { markOpen = null; dayOffset += a.dataset.a === 'prev' ? -1 : a.dataset.a === 'next' ? 1 : -dayOffset; renderHoy(); return; }
       if (e.target.closest('[data-ruta]')) { metaView = 'ruta'; rutaProj = ''; setTab('metas'); return; }
@@ -710,7 +714,7 @@
   function blockForm(d, b) {
     const isT = iso(d) === iso(today()); const dn = DIAS[dow(d)].toLowerCase() + (dow(d) >= 6 ? 's' : ''); const k = keyOf(d);
     const h0 = isT ? Math.min(22, Math.floor(nowMin() / 60) + 1) : 15; const p2 = (n) => String(n).padStart(2, '0');
-    const F2 = b ? { cat: b.cat, s: b.s, e: b.e, title: b.title, scope: b.hoy ? 'hoy' : 'siempre' } : { cat: 'app', s: p2(h0) + ':00', e: p2(Math.min(23, h0 + 1)) + ':00', title: CATS.app.n, scope: 'hoy' };
+    const F2 = b ? { cat: b.cat, s: b.s, e: b.e, title: b.title, scope: b.hoy ? 'hoy' : 'siempre', fijo: !!b.fijo } : { cat: 'app', s: p2(h0) + ':00', e: p2(Math.min(23, h0 + 1)) + ':00', title: CATS.app.n, scope: 'hoy', fijo: false };
     let typed = false;
     const draw = () => {
       const cats = EDIT_CATS.includes(F2.cat) ? EDIT_CATS : [F2.cat].concat(EDIT_CATS);
@@ -718,6 +722,7 @@
       h += '<div class="f">¿QUÉ VAS A HACER?</div><div class="chips wrap">' + cats.map((c) => '<button class="chip ' + (F2.cat === c ? 'on' : '') + '" style="--cc:' + CATS[c].color + '" data-bc="' + c + '">' + esc(catLabel(c)) + '</button>').join('') + '</div>';
       h += '<div class="f">NOMBRE</div><input id="bfT" maxlength="60" value="' + esc(F2.title) + '">';
       h += '<div class="f">HORA</div><div class="row2"><input type="time" id="bfS" value="' + F2.s + '"><input type="time" id="bfE" value="' + F2.e + '"></div>';
+      h += '<div class="f">¿SE PUEDE MOVER?</div><div class="row2"><button class="btn ' + (!F2.fijo ? 'cy' : 'alt') + ' sm" data-bfx="0">↔ Flexible</button><button class="btn ' + (F2.fijo ? 'cy' : 'alt') + ' sm" data-bfx="1">🔒 Fijo</button></div>';
       h += '<div class="f">¿PARA CUÁNDO?</div><div class="row2"><button class="btn ' + (F2.scope === 'hoy' ? 'cy' : 'alt') + ' sm" data-bsc="hoy">' + (isT ? 'Solo hoy' : 'Solo este día') + '</button><button class="btn ' + (F2.scope === 'siempre' ? 'cy' : 'alt') + ' sm" data-bsc="siempre">Todos los ' + dn + '</button></div>';
       h += '<p class="muted" style="margin-top:6px">' + (F2.scope === 'hoy' ? 'Anota lo que de verdad hiciste. Tu horario no cambia.' : 'Cambia los ' + dn + ' de tu horario de ' + KEY_N[k] + '.') + '</p>';
       h += '<button class="btn" data-bsave="1">Guardar</button>' + (b ? '<button class="btn alt sm" data-bdel="1">Quitar este bloque</button>' : '') + '</div>';
@@ -729,9 +734,10 @@
     $('#sheet').onclick = (e) => {
       const bc = e.target.closest('[data-bc]'); if (bc) { read(); F2.cat = bc.dataset.bc; if (!typed || !F2.title.trim()) { F2.title = F2.cat === 'libre' ? 'Libre' : F2.cat === 'rutina' ? 'Otro' : CATS[F2.cat].n; typed = false; } draw(); return; }
       const sc = e.target.closest('[data-bsc]'); if (sc) { read(); F2.scope = sc.dataset.bsc; draw(); return; }
+      const fx = e.target.closest('[data-bfx]'); if (fx) { read(); F2.fijo = fx.dataset.bfx === '1'; draw(); return; }
       if (e.target.closest('[data-bsave]')) {
         read(); if (mins(F2.e) <= mins(F2.s)) { toast('La hora final va después de la inicial'); return; }
-        saveBlock(d, b, { s: F2.s, e: F2.e, cat: F2.cat, title: (F2.title || '').trim() || CATS[F2.cat].n }, F2.scope);
+        saveBlock(d, b, Object.assign({ s: F2.s, e: F2.e, cat: F2.cat, title: (F2.title || '').trim() || CATS[F2.cat].n }, F2.fijo ? { fijo: true } : {}), F2.scope);
         closeSheet(); render(); toast(F2.scope === 'hoy' ? '✓ Cambiado solo ' + (isT ? 'hoy' : 'ese día') : '✓ Cambiaste los ' + dn);
         return;
       }
@@ -1008,7 +1014,8 @@
   }
   // ---------- METAS ----------
   function renderMetas() {
-    let h = '<div class="sw2"><button class="' + (metaView === 'mandala' ? 'on' : '') + '" data-mv="mandala">Mandala</button><button class="' + (metaView === 'ruta' ? 'on' : '') + '" data-mv="ruta">🧭 Mi ruta</button></div>';
+    if (metaView !== 'ruta' && window.PR) { PR.render(); return; } // la mandala se reemplazó por Proyectos (27 nov 2026)
+    let h = '<div class="sw2"><button class="' + (metaView === 'mandala' ? 'on' : '') + '" data-mv="mandala">🚀 Proyectos</button><button class="' + (metaView === 'ruta' ? 'on' : '') + '" data-mv="ruta">🧭 Mi ruta</button></div>';
     if (metaView === 'ruta') { renderRuta(h); return; }
     const p = P[metaProj];
     h += '<div class="chips">' + ORDER.map((id) => '<button class="chip ' + (id === metaProj ? 'on' : '') + '" style="--cc:' + P[id].color + '" data-p="' + id + '">' + esc(P[id].name) + '</button>').join('') + '</div>';
@@ -1469,7 +1476,7 @@
   window.NP = {
     get S() { return S; }, save, saveQuiet, reload() { fix(); applyRemote(); applySchedule(); scheduleNotifs(); render(); }, $, esc, iso, parseIso, dow, mins, nowMin, today, addDays, atTime, weekOf, mondayOf, fmtDate, fmtShort, fmtWhen, h12, hhmmOf, dayDiff, hash, DAY, DIAS, DIAS_S, MESES,
     P, ORDER, RUTA, blocksOf, tripOf, vacOn, pausa, topicOf, pending, tasksDueAt, setTaskDone, TT, SUBJ, subj, nextSessions, sessionsOn, remindersOf, className, ejWeek, ejStreak,
-    openTaskForm, openTask, taskCard, openBlock, openMeta, blockById, saveBlock, blockForm, quickAdd, modoOn, keyOf, cycleOf, setModo, queueAt, skipTask, blockState, blockWhy, setBlockState, blockScore, MOTIVOS_NO, voz, RUTA_CATS, metaKey, openTripForm, openSheet, closeSheet, openPage, closePage, toast, setTab, render, renderHoy, scheduleNotifs, isDone, setDone, ruta, getMeta, metaDone, nextPendingMeta, isNotifOn, openUrl, fetchText, regCb, N,
+    openTaskForm, openTask, taskCard, openBlock, openMeta, toggleMeta, countDone, isFijo, blockById, saveBlock, blockForm, quickAdd, modoOn, keyOf, cycleOf, setModo, queueAt, skipTask, blockState, blockWhy, setBlockState, blockScore, MOTIVOS_NO, voz, RUTA_CATS, metaKey, openTripForm, openSheet, closeSheet, openPage, closePage, toast, setTab, render, renderHoy, scheduleNotifs, isDone, setDone, ruta, getMeta, metaDone, nextPendingMeta, isNotifOn, openUrl, fetchText, regCb, N,
     get tab() { return tab; }, get dayOffset() { return dayOffset; }, get hoyView() { return hoyView; }, setHoyView(v) { hoyView = v; }, setEjDay(v) { ejDay = v; }, setMetaView(v, p) { metaView = v; rutaProj = p || ''; },
     hooks: { notif: [], check: [], resume: [], yo: [], yoBind: [], yoClick: [], boot: [], changed: [], saved: [] }
   };
@@ -1496,6 +1503,10 @@
     const prevSeen = S.seenVersion || 1;
     S.seenVersion = APP_VERSION; if (S.appUpd && S.appUpd.version <= APP_VERSION) S.appUpd = null; save();
     openSheet('<div class="det"><h2>Novedades de NEXO PLAN ' + APP_NAME + ' ✨</h2>' +
+      (prevSeen < 11 ? '<div class="step"><b>🚀</b><span><b>Metas ahora es Proyectos:</b> tus 6 áreas son proyectos (sus metas siguen igual) y puedes crear los tuyos desde una idea, con estado: activo, pausado o empieza después.</span></div>' +
+      '<div class="step"><b>✅</b><span><b>Tareas 1 a 5:</b> cada tarea con importancia y urgencia; el orden sale solo. Las ve Harvey y las demás apps NEXO.</span></div>' +
+      '<div class="step"><b>⚡</b><span><b>Organizar mi día</b> (en Mi día): te propongo dónde van tus tareas y tu estudio en tus ratos Libre. Tú quitas lo que no quieras y aplicas.</span></div>' +
+      '<div class="step"><b>🔒</b><span><b>Bloques fijos y flexibles:</b> al cambiar un bloque eliges si es fijo (no se mueve) o flexible.</span></div>' : '') +
       '<div class="step"><b>🔁</b><span><b>Ciclo de 4 semanas:</b> Enfoque App Web, Cámara y edición, Negocio y Días temáticos. Cada día: 12 h de trabajo, 4 de descanso y 8 de sueño. Lo mínimo del día son “Tus 3 de hoy”. Míralo en Progreso → Tu horario.</span></div>' +
       '<div class="step"><b>💻</b><span><b>En el PC</b> ahora se ve a lo ancho: menú a la izquierda, tu día en dos columnas y atajos (1–5 pestañas, N nueva tarea, ← → días, Esc cerrar).</span></div>' +
       (prevSeen < 8 ? '' +

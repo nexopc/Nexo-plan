@@ -13,7 +13,7 @@
 
   function dayList(d) {
     const di = X.iso(d);
-    return X.blocksOf(d).map((b) => ({ s: b.s, e: b.e, cat: b.cat, title: b.title, estado: X.blockState(di, b.id) || null, ancla: !!X.S.anchors[b.id] }));
+    return X.blocksOf(d).map((b) => ({ s: b.s, e: b.e, cat: b.cat, title: b.title, estado: X.blockState(di, b.id) || null, ancla: !!X.S.anchors[b.id], fijo: X.isFijo ? X.isFijo(b) : false }));
   }
   function publish() {
     try {

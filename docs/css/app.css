@@ -467,3 +467,8 @@ select { font: inherit; color: var(--tx); background: var(--card); border: 1px s
 .ia-load i { width: 10px; height: 10px; border-radius: 50%; background: var(--pur); animation: iadot 1s infinite; }
 .ia-load i:nth-child(2) { animation-delay: .15s; } .ia-load i:nth-child(3) { animation-delay: .3s; }
 @keyframes iadot { 50% { opacity: .3; transform: translateY(-4px); } }
+
+/* Proyectos (1.8) */
+.prrow { display: flex; gap: 8px; margin: 0 0 10px; align-items: stretch; }
+.prrow input { flex: 1; min-width: 0; }
+.prrow .btn { width: auto; min-width: 52px; margin-top: 0; padding: 0 16px; }
