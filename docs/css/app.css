@@ -472,3 +472,12 @@ select { font: inherit; color: var(--tx); background: var(--card); border: 1px s
 .prrow { display: flex; gap: 8px; margin: 0 0 10px; align-items: stretch; }
 .prrow input { flex: 1; min-width: 0; }
 .prrow .btn { width: auto; min-width: 52px; margin-top: 0; padding: 0 16px; }
+
+/* ‹ Atrás (1.10): visible siempre que haya a dónde volver */
+.atras { display: none; align-items: center; gap: 2px; margin-right: 8px; padding: 6px 10px 6px 4px; border-radius: 10px; color: var(--cyan); font-size: 17px; font-weight: 800; background: none; }
+.atras span { font-size: 15px; }
+.atras.on { display: inline-flex; }
+header.top { justify-content: flex-start; } header.top .top-r { margin-left: auto; }
+.atras-p { display: block; }
+.sheet-x { position: sticky; top: 0; float: right; width: 34px; height: 34px; margin: -2px -4px 0 8px; border-radius: 50%; background: var(--card2); color: var(--tx); font-size: 15px; font-weight: 800; z-index: 2; }
+@media (min-width: 900px) { .atras.on { position: fixed; left: 26px; top: 64px; z-index: 8; } }
