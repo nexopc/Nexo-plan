@@ -79,7 +79,7 @@
     const p = pf(); const ej = X.ejStreak(); const R = X.ruta(null);
     const lag = X.ORDER.map((id) => ({ id, n: X.ruta(id).atrasadas.length })).sort((a, b) => b.n - a.n)[0];
     return 'Eres ' + p.nombre + ', ' + p.edad + ' años, de ' + p.ciudad.split(',')[0] + '. Estás en ' + p.grado.replace(/ grado$/, '') + ' y ' + (p.trabajo.charAt(0).toLowerCase() + p.trabajo.slice(1)).replace(/^trabajo /, 'trabajas ') + '. Tu meta: ' + p.meta.charAt(0).toLowerCase() + p.meta.slice(1) + '. ' +
-      'Llevas ' + ej + ' día(s) de racha de ejercicio y ' + R.llevas + ' metas cumplidas' + (lag && lag.n ? '; el proyecto que más se te atrasa es ' + X.P[lag.id].name + ' (' + lag.n + ' metas)' : '') + '.';
+      'Llevas ' + ej + ' día(s) de racha de ejercicio y ' + (window.PR ? PR.pendingCount() : 0) + ' tarea(s) pendiente(s) en tus proyectos.';
   }
   function openPerfil(edit) {
     const p = pf(); const I = insights();
@@ -265,7 +265,7 @@
     // siguiente bloque
     const nx = X.blocksOf(d0).find((b) => X.mins(b.s) > nm && window.CATS[b.cat].check && !X.pausa(b, d0));
     if (nx && cur && cur.cat === 'libre') add({ s: 50, cat: 'bloque', t: 'Prepárate para ' + nx.title + ' (' + X.h12(nx.s) + ')', w: X.topicOf(nx, d0).t || '', o: { t: 'block', id: nx.id, di } });
-    if (!C.length) add({ s: 1, cat: 'bien', t: 'Vas al día: adelanta algo de la próxima semana', w: 'Mira Metas → Mi ruta y escoge una meta próxima.', o: { t: 'ruta' } });
+    if (!C.length) add({ s: 1, cat: 'bien', t: 'Vas al día: adelanta algo de la próxima semana', w: 'Mira Proyectos → Tareas y adelanta la que sigue.', o: { t: 'ruta' } });
     return C.sort((a, b) => b.s - a.s);
   }
   function bestCard(limitMin, cat) {
@@ -350,14 +350,13 @@
       return say(cat, txt, card ? { card } : {});
     }
     if (/(plata|dinero|ahorr|platica|presupuesto|gastos|cuanto me falta)/.test(t)) {
-      const ar = X.P.habitos.areas[4]; let id = null; for (let j = 0; j < 8; j++) if (!X.metaDone('habitos', '5.' + (j + 1))) { id = '5.' + (j + 1); break; }
-      return say('plata', id ? 'Tu siguiente meta de plata es Hábitos ' + id + ': ' + ar.metas[+id.split('.')[1] - 1].t + '. Primer paso: ' + ar.metas[+id.split('.')[1] - 1].s[0] : 'Ya cumpliste tus 8 metas de finanzas personales. Ahora la plata va para NEXO PC.', id ? { card: { type: 'meta', pid: 'habitos', id } } : {});
+      return say('plata', 'Tu plata la lleva NEXO Finanzas: registra cada gasto en 3 toques y revisa tu meta de ahorro para NEXO PC.');
     }
-    if (/(como voy|progreso|atrasad|voy bien|mi ruta)/.test(t)) { const R = X.ruta(null); const diff = R.llevas - R.deberias; return say(diff >= 0 ? 'bien' : 'mal', 'Llevas ' + R.llevas + ' metas cumplidas y el plan pedía ' + R.deberias + ' (' + (diff >= 0 ? '+' + diff : diff) + '). ' + (R.atrasadas[0] ? 'La más urgente: ' + X.P[R.atrasadas[0].pid].short + ' ' + R.atrasadas[0].id + ' — ' + R.atrasadas[0].m.t + '.' : 'No tienes metas atrasadas.'), { card: { type: 'ruta' } }); }
+    if (/(como voy|progreso|atrasad|voy bien|mi ruta)/.test(t)) { const np = window.PR ? PR.pendingCount() : 0; const top = window.PR ? PR.topTask() : null; return say(np ? 'mal' : 'bien', np && top ? 'Tienes ' + np + ' tarea(s) pendiente(s) en tus proyectos. La más importante: ' + top.title + '.' : 'No tienes tareas pendientes: vas al día.'); }
     if (/(ruta|vueltas|mandados|diligencias|salir a)/.test(t)) { const st = window.MAPA ? MAPA.stopsToday() : []; return say('ruta', st.length ? 'Hoy tienes ' + st.length + ' vuelta(s) con sitio. Te armo el orden:' : 'No tienes vueltas con sitio para hoy. Dime algo como “comprar cartulina en la papelería antes del viernes”.', st.length ? { card: { type: 'mapa' } } : {}); }
     if (/^(busca|buscar|buscame|precio|cuanto cuesta|cuanto vale)/.test(t)) { const q = raw.replace(/^(busca(me)?|buscar|precio( de)?|cu[aá]nto (cuesta|vale))\s*/i, ''); return say('buscar', 'Te mejoré la búsqueda:', { card: { type: 'search', q } }); }
     if (/(ganas|motiv|pereza|procrastin|no quiero|aburrid)/.test(t)) return say('motivacion', 'Hagamos un trato: 10 minutos de lo más importante y después decides si sigues.', { card: bestCard() });
-    if (/(gracias|listo|hecho|ya lo hice|termine)/.test(t)) return say('celebrar', '¡Eso! Márcalo en la app para que cuente en tu ruta.', { x: doneToday() });
+    if (/(gracias|listo|hecho|ya lo hice|termine)/.test(t)) return say('celebrar', '¡Eso! Márcalo en la app para que cuente en tu día.', { x: doneToday() });
     if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ey)\b/.test(t)) return greet();
     if (/(que hago|que sigue|ahora que|que me recomiendas|que deberia)/.test(t)) return say(bestActions()[0].cat, 'Esto es lo mejor que puedes hacer ahora:', { card: bestCard() });
     if (/(ayuda|que puedes hacer|como funciona)/.test(t)) return say('noEntendi', 'Puedo hacer esto, sin internet y gratis:', { card: { type: 'help' } });
@@ -367,13 +366,14 @@
   function tomorrowList() { return window.AG ? AG.dayList(X.addDays(X.today(), 1)) : []; }
   function tomorrowTop() { const L = tomorrowList(); const y = L[0]; return y ? (y.t ? y.t.title : y.x.title) : 'dormir bien y cumplir tus bloques ancla'; }
   function itemLine(y) { return y.k === 'entrega' ? (X.TT[y.t.type] || X.TT.tarea).i + ' ' + y.t.title + ' · ' + X.h12(X.hhmmOf(y.at)) : y.k === 'cita' ? '📍 ' + y.x.title + ' · ' + X.h12(X.hhmmOf(y.at)) : '🔄 ' + y.x.title + ' · ' + X.h12(X.hhmmOf(y.at)); }
-  function tomorrowText() { const L = tomorrowList(); return L.length ? 'Mañana tienes: ' + L.map(itemLine).join(' · ') + '.' : 'Mañana no tienes entregas, citas ni pendientes agendados. Cumple tus bloques y adelanta una meta.'; }
+  function tomorrowText() { const L = tomorrowList(); return L.length ? 'Mañana tienes: ' + L.map(itemLine).join(' · ') + '.' : 'Mañana no tienes entregas, citas ni pendientes agendados. Cumple tus bloques y adelanta una tarea de tus proyectos.'; }
   function todayText() { const L = window.AG ? AG.dayList(X.today()) : []; return L.length ? 'Hoy tienes: ' + L.map(itemLine).join(' · ') + '.' : 'Hoy no tienes entregas ni citas en la agenda. Tu horario normal manda.'; }
   function greet() {
     const h = new Date().getHours(); const sal = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
     const R = X.ruta(null);
     const fin = X.dow(X.today()) >= 6;
-    return say(R.atrasadas.length ? 'mal' : fin ? 'finde' : 'bien', sal + ', ' + pf().nombre.split(' ')[0] + '. ' + todayText() + ' ' + (R.atrasadas.length ? 'Tienes ' + R.atrasadas.length + ' meta(s) atrasada(s).' : 'Vas al día con tus metas.'), { card: bestCard() });
+    const np = window.PR ? PR.pendingCount() : 0;
+    return say(fin ? 'finde' : 'bien', sal + ', ' + pf().nombre.split(' ')[0] + '. ' + todayText() + ' ' + (np ? 'Tienes ' + np + ' tarea(s) pendiente(s) en tus proyectos.' : 'No tienes tareas pendientes en tus proyectos.'), { card: bestCard() });
   }
 
   // ---------- tarjetas del chat ----------
@@ -419,7 +419,7 @@
   function render(h) {
     if (!chat().length) greet();
     const nm = X.ORDER.reduce((a, id) => a + X.P[id].areas.length * 8, 0);
-    h += '<div class="ctx">✦ Harvey y Mike conocen: <b>tu perfil · tu horario · ' + nm + ' metas · ' + X.pending().length + ' entregas · ' + X.S.agenda.filter((x) => !x.done).length + ' pendientes · ' + X.S.places.length + ' sitios</b><button class="pfb" data-perfil="1">👤 Mi perfil ›</button></div>';
+    h += '<div class="ctx">✦ Harvey y Mike conocen: <b>tu perfil · tu horario · ' + (window.PR ? PR.pendingCount() : 0) + ' tareas · ' + X.pending().length + ' entregas · ' + X.S.agenda.filter((x) => !x.done).length + ' pendientes · ' + X.S.places.length + ' sitios</b><button class="pfb" data-perfil="1">👤 Mi perfil ›</button></div>';
     h += '<button class="ask" data-ask="1">✦ ¿Qué hago ahora?</button>';
     h += '<div class="sug">' + ['⏱️ Tengo 30 min', '📉 ¿Por qué voy mal?', '👤 ¿Qué sabes de mí?', '😴 Estoy cansado', '📅 ¿Qué tengo mañana?', '🧭 ¿Cómo voy?', '🗺️ Ruta de hoy', '🔍 Buscador', '❓ Ayuda'].map((s) => '<button data-sg="' + esc(s) + '">' + s + '</button>').join('') + '</div>';
     const start = Math.max(0, chat().length - 24);

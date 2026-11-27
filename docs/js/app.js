@@ -1,7 +1,8 @@
 /* NEXO PLAN — lógica de la app */
 (function () {
   'use strict';
-  const APP_VERSION = 11, APP_NAME = '1.8';
+  const APP_VERSION = 12, APP_NAME = '1.9';
+  const NO_METAS = true; // (27 nov 2026) sin metas: los proyectos son nombre, notas y tareas
   const N = window.NexoNative || null; // puente con Android (no existe en el navegador)
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -226,7 +227,7 @@
     return null; // permanente o sin fecha
   }
   const RUTA = [];
-  PROJECTS.forEach((p) => p.areas.forEach((ar, i) => ar.metas.forEach((m, j) => RUTA.push({ pid: p.id, id: (i + 1) + '.' + (j + 1), m, ar, w: metaWindow(m.m) }))));
+  if (!NO_METAS) PROJECTS.forEach((p) => p.areas.forEach((ar, i) => ar.metas.forEach((m, j) => RUTA.push({ pid: p.id, id: (i + 1) + '.' + (j + 1), m, ar, w: metaWindow(m.m) }))));
   const doneWeek = (x) => { const v = S.metas[metaKey(x.pid, x.id)]; return v ? weekOf(parseIso(v)) : null; };
   function ruta(pid) {
     const w = weekOf(today());
@@ -395,6 +396,10 @@
   // ---------- Tema concreto de un bloque ----------
   function topicOf(b, d) {
     const w = weekOf(d); const ses = SESIONES[w]; const cat = CATS[b.cat];
+    if (['app', 'video', 'agencia', 'nexo', 'creador'].includes(b.cat) && NO_METAS) {
+      const tk = window.PR && PR.nextTask(b.cat);
+      return tk ? { t: '✅ ' + tk.title, d: 'Próxima tarea del proyecto · ' + (tk.minutes || 30) + ' min. Márcala en Proyectos cuando la termines.', task: tk.id } : { t: '', d: '' };
+    }
     if (['app', 'video', 'agencia', 'nexo', 'creador'].includes(b.cat)) {
       const q = QCATS.includes(b.cat) ? queueAt(b.cat, b, d) : null;
       if (q && q.s) return { meta: q.s[0], pid: b.cat, t: q.s[1], d: q.s[2], carry: q.carry, qi: q.idx };
@@ -502,7 +507,7 @@
 
   window.handleBack = function () {
     if (!$('#sheet').classList.contains('hidden')) { closeSheet(); return true; }
-    if (!$('#page').classList.contains('hidden')) { closePage(); render(); return true; }
+    if (!$('#page').classList.contains('hidden')) { const pn = $('#prNotes'); if (pn) pn.dispatchEvent(new Event('change', { bubbles: true })); closePage(); render(); return true; }
     if (tab === 'hoy' && hoyView !== 'dia') { hoyView = 'dia'; render(); return true; }
     if (tab === 'metas' && metaView !== 'mandala') { metaView = 'mandala'; render(); return true; }
     if (tab !== 'hoy') { setTab('hoy'); return true; }
@@ -597,9 +602,9 @@
       const T3 = top3(d);
       if (T3.length) h += '<div class="top3"><div class="k">🎯 TUS 3 DE HOY · SI SOLO HACES ESTO, GANASTE EL DÍA</div>' + T3.map((x) => '<div class="r ' + (x.st === 'ok' || x.st === 'half' ? 'ok' : '') + '"><button class="c3" data-t3="' + x.b.id + '" aria-label="Marcar">' + (x.st === 'ok' ? '✓' : x.st === 'half' ? '½' : '') + '</button><span data-open="' + x.b.id + '">' + esc(CATS[x.b.cat].n.replace(' de marketing', '').replace(' (Filmora)', '') + ': ' + (x.tp.t || x.b.title)) + ' <i>' + h12(x.b.s) + '</i></span></div>').join('') + '</div>';
     }
-    const cntH = isToday && window.CNT ? CNT.hoyHtml() : '';
+    const cntH = isToday && window.CNT && !NO_METAS ? CNT.hoyHtml() : '';
     if (cntH && nm >= 18 * 60) h += cntH;
-    if (isToday) { const R = ruta(null); const n = R.atrasadas.length; h += '<button class="rutaline ' + (n ? 'bad' : '') + '" data-ruta="1">🧭 Tu ruta: ' + (n ? n + ' meta(s) atrasada(s) · deberías estar en ' + esc(P[R.atrasadas[0].pid].short) + ' ' + R.atrasadas[0].id : 'vas al día ✓ · ' + R.enCurso.length + ' meta(s) en curso') + ' ›</button>'; }
+    if (isToday && !NO_METAS) { const R = ruta(null); const n = R.atrasadas.length; h += '<button class="rutaline ' + (n ? 'bad' : '') + '" data-ruta="1">🧭 Tu ruta: ' + (n ? n + ' meta(s) atrasada(s) · deberías estar en ' + esc(P[R.atrasadas[0].pid].short) + ' ' + R.atrasadas[0].id : 'vas al día ✓ · ' + R.enCurso.length + ' meta(s) en curso') + ' ›</button>'; }
     if (window.PR) h += PR.hoyHtml(d); // ⚡ lo organizado, arriba y a la vista
     if (!Object.keys(S.anchors).length && isToday) h += '<div class="box">⚓ <strong>Escoge 3 bloques ancla:</strong> los que no negocias pase lo que pase. Toca un bloque y luego “Hacer bloque ancla”. Cuando esos estén firmes, sumas los demás.</div>';
     bl.forEach((b) => {
@@ -1014,7 +1019,7 @@
   }
   // ---------- METAS ----------
   function renderMetas() {
-    if (metaView !== 'ruta' && window.PR) { PR.render(); return; } // la mandala se reemplazó por Proyectos (27 nov 2026)
+    if ((NO_METAS || metaView !== 'ruta') && window.PR) { PR.render(); return; } // la mandala se reemplazó por Proyectos (27 nov 2026)
     let h = '<div class="sw2"><button class="' + (metaView === 'mandala' ? 'on' : '') + '" data-mv="mandala">🚀 Proyectos</button><button class="' + (metaView === 'ruta' ? 'on' : '') + '" data-mv="ruta">🧭 Mi ruta</button></div>';
     if (metaView === 'ruta') { renderRuta(h); return; }
     const p = P[metaProj];
@@ -1181,7 +1186,7 @@
     // entregas de la semana
     const wkTasks = S.tasks.filter((x) => x.due >= mon.getTime() && x.due < addDays(mon, 7).getTime()).sort((a, b) => a.due - b.due);
     if (wkTasks.length) h += '<div class="sec" style="color:#ff5252">Entregas de la semana</div>' + wkTasks.map(taskCard).join('');
-    if (ses) {
+    if (ses && !NO_METAS) {
       [['app', 'App Web'], ['video', 'Edición de video'], ['creador', 'Creador de contenido'], ['agencia', 'Agencia'], ['nexo', 'NEXO PC']].forEach(([k, n]) => {
         let rows = '';
         for (let i = 0; i < 7; i++) { const dd = addDays(mon, i); blocksOf(dd).filter((b) => b.cat === k).forEach((b) => { const tp = topicOf(b, dd); rows += '<div class="item ' + (isDone(iso(dd), b.id) ? 'done' : '') + '" style="--c:' + CATS[k].color + '" data-b="' + b.id + '|' + (i + 1) + '"><div class="bd"><div class="t">' + esc(tp.t) + '</div><div class="h">' + DIAS[i + 1] + ' ' + h12(b.s) + (tp.meta ? ' · meta ' + tp.meta : '') + (tp.carry ? ' · ↪ ' + tp.carry + ' sin hacer' : '') + '</div></div></div>'; }); }
@@ -1202,10 +1207,11 @@
   function activeTrip() { const di = iso(today()); return S.trips.find((t) => t.to >= di) || null; }
   function renderYo() {
     let h = updBanner();
+    if (NO_METAS && window.PR) h += PR.progressHtml(); else {
     h += '<div class="sec">Progreso de tus ' + ORDER.length + ' proyectos</div><div class="card">';
     ORDER.forEach((id) => { const c = countDone(id); h += '<div class="pbar"><div class="nm">' + esc(P[id].name) + '</div><div class="tr"><i style="width:' + (c / 64 * 100) + '%;background:' + P[id].color + '"></i></div><div class="v">' + c + '/64</div></div>'; });
     const total = ORDER.reduce((a, id) => a + countDone(id), 0);
-    h += '<div class="muted">Total: ' + total + ' de ' + RUTA.length + ' metas cumplidas.</div></div>';
+    h += '<div class="muted">Total: ' + total + ' de ' + RUTA.length + ' metas cumplidas.</div></div>'; }
 
     // Modo fuera de casa
     const tr = activeTrip();
@@ -1503,7 +1509,8 @@
     const prevSeen = S.seenVersion || 1;
     S.seenVersion = APP_VERSION; if (S.appUpd && S.appUpd.version <= APP_VERSION) S.appUpd = null; save();
     openSheet('<div class="det"><h2>Novedades de NEXO PLAN ' + APP_NAME + ' ✨</h2>' +
-      (prevSeen < 11 ? '<div class="step"><b>🚀</b><span><b>Metas ahora es Proyectos:</b> tus 6 áreas son proyectos (sus metas siguen igual) y puedes crear los tuyos desde una idea, con estado: activo, pausado o empieza después.</span></div>' +
+      '<div class="step"><b>🧹</b><span><b>Sin metas:</b> cada proyecto es solo su nombre, tus notas y sus tareas. Tus bloques muestran la próxima tarea del proyecto.</span></div>' +
+      (prevSeen < 11 ? '<div class="step"><b>🚀</b><span><b>Proyectos:</b> tus 6 áreas son proyectos y puedes crear los tuyos desde una idea, con estado: activo, pausado o empieza después.</span></div>' +
       '<div class="step"><b>✅</b><span><b>Tareas 1 a 5:</b> cada tarea con importancia y urgencia; el orden sale solo. Las ve Harvey y las demás apps NEXO.</span></div>' +
       '<div class="step"><b>⚡</b><span><b>Organizar mi día</b> (en Mi día): te propongo dónde van tus tareas y tu estudio en tus ratos Libre. Tú quitas lo que no quieras y aplicas.</span></div>' +
       '<div class="step"><b>🔒</b><span><b>Bloques fijos y flexibles:</b> al cambiar un bloque eliges si es fijo (no se mueve) o flexible.</span></div>' : '') +
