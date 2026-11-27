@@ -1,5 +1,5 @@
 /* NEXO PLAN — service worker: guarda la app para que abra sin internet y se actualice sola */
-const CACHE = 'nexoplan-1.9-89b4d772';
+const CACHE = 'nexoplan-1.10-b6d1c7fe';
 const FILES = [
   './css/app.css',
   './icons/apple-touch-icon.png',
@@ -10,6 +10,7 @@ const FILES = [
   './js/agenda.js',
   './js/app.js',
   './js/asistente.js',
+  './js/atras.js',
   './js/boot.js',
   './js/contadores.js',
   './js/desktop.js',
